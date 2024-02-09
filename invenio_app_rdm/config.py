@@ -686,6 +686,7 @@ APP_RDM_DEPOSIT_FORM_TEMPLATE = "invenio_app_rdm/records/deposit.html"
 APP_RDM_USER_DASHBOARD_ROUTES = {
     "uploads": "/me/uploads",
     "communities": "/me/communities",
+    "persons": "/me/persons",
     "requests": "/me/requests",
 }
 
@@ -938,6 +939,7 @@ RDM_REQUESTS_ROUTES = {
 
 RDM_COMMUNITIES_ROUTES = {
     "community-detail": "/communities/<pid_value>",
+    "person-detail": "/persons/<pid_value>",
 }
 
 RDM_SEARCH_USER_COMMUNITIES = {

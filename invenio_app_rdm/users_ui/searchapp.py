@@ -24,15 +24,29 @@ def search_app_context():
             "/api/user/records",
             {"Accept": "application/vnd.inveniordm.v1+json"},
             pagination_options=(10, 20),
+            overrides={"objectSearched": "uploads"}
         ),
         "search_app_rdm_user_communities_config": partial(
             search_app_config,
-            "RDM_SEARCH_USER_COMMUNITIES",
-            current_app.config["COMMUNITIES_FACETS"],
-            current_app.config["RDM_SORT_OPTIONS"],
-            "/api/user/communities",
-            {"Accept": "application/vnd.inveniordm.v1+json"},
+            config_name="RDM_SEARCH_USER_COMMUNITIES",
+            available_facets=current_app.config["COMMUNITIES_FACETS"],
+            sort_options=current_app.config["RDM_SORT_OPTIONS"],
+            headers={"Accept": "application/vnd.inveniordm.v1+json"},
             pagination_options=(10, 20),
+            endpoint="/api/user/communities",
+            overrides={"objectSearched": "communities"}
+        ),
+        "search_app_rdm_user_persons_config": partial(
+            search_app_config,
+            config_name="RDM_SEARCH_USER_COMMUNITIES",
+            available_facets=current_app.config["COMMUNITIES_FACETS"],
+            sort_options=current_app.config["RDM_SORT_OPTIONS"],
+            endpoint="/api/user/persons",
+            headers={
+                "Accept": "application/vnd.inveniordm.v1+json"
+            },
+            pagination_options=(10, 20),
+            overrides={"objectSearched": "persons"}
         ),
         "search_app_rdm_user_requests_config": partial(
             search_app_config,

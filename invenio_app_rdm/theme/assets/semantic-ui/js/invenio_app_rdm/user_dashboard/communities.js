@@ -8,25 +8,27 @@
 // under the terms of the MIT License; see LICENSE file for more details.
 
 import { createSearchAppInit } from "@js/invenio_search_ui";
-import { i18next } from "@translations/invenio_app_rdm/i18next";
 import {
   CommunityItem,
   ResultsGridItemTemplate,
   CommunitiesEmptySearchResults,
 } from "@js/invenio_communities/community";
 import { RDMRecordSearchBarElement } from "../search/components";
-import { DashboardResultView, DashboardSearchLayoutHOC } from "./base";
+import {
+  DashboardResultView,
+  DashboardSearchLayoutHOC
+} from "./base";
 import {
   ContribSearchAppFacets,
   ContribBucketAggregationElement,
   ContribBucketAggregationValuesElement,
 } from "@js/invenio_search_ui/components";
+
 import { overrideStore, parametrize } from "react-overridable";
 
 export const appName = "InvenioAppRdm.DashboardCommunities";
 
-export const DashboardCommunitiesSearchLayout = DashboardSearchLayoutHOC({
-  searchBarPlaceholder: i18next.t("Search in my communities..."),
+export const DashboardCommunitiesSearchLayoutConfig = parametrize(DashboardSearchLayoutHOC, {
   appName: appName,
 });
 
@@ -41,7 +43,7 @@ export const defaultComponents = {
   [`${appName}.SearchApp.facets`]: ContribSearchAppFacets,
   [`${appName}.ResultsList.item`]: CommunityItem,
   [`${appName}.ResultsGrid.item`]: ResultsGridItemTemplate,
-  [`${appName}.SearchApp.layout`]: DashboardCommunitiesSearchLayout,
+  [`${appName}.SearchApp.layout`]: DashboardCommunitiesSearchLayoutConfig,
   [`${appName}.SearchApp.results`]: DashboardResultViewWAppName,
   [`${appName}.SearchBar.element`]: RDMRecordSearchBarElement,
 };

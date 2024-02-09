@@ -35,6 +35,13 @@
         {{ _('New community') }}
       </a>
     {% endif %}
+
+    {% if active_dashboard_menu_item == "persons" %}
+      <a class="ui tiny button positive left labeled icon m-0" href="/persons/new">
+        <i class="plus icon" aria-hidden="true"></i>
+        {{ _('New person') }}
+      </a>
+    {% endif %}
   </div>
   <div class="ui container secondary pointing menu page-subheader pl-0">
   {% for item in current_menu.submenu('dashboard').children %}

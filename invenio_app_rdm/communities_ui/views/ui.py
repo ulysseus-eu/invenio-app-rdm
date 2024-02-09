@@ -21,7 +21,7 @@ from invenio_pidstore.errors import PIDDeletedError, PIDDoesNotExistError
 from invenio_records_resources.services.errors import PermissionDeniedError
 
 from ..searchapp import search_app_context
-from .communities import communities_detail
+from .communities import communities_detail, persons_detail
 
 
 #
@@ -81,12 +81,27 @@ def create_ui_blueprint(app):
         strict_slashes=False,
     )
 
+    blueprint.add_url_rule(
+        routes["person-detail"],
+        view_func=persons_detail,
+        strict_slashes=False,
+    )
+
     @blueprint.before_app_first_request
     def register_menus():
         """Register community menu items."""
         communities = current_menu.submenu("communities")
         communities.submenu("search").register(
             "invenio_app_rdm_communities.communities_detail",
+            text=_("Records"),
+            order=1,
+            expected_args=["pid_value"],
+            **dict(icon="search", permissions=True),
+        )
+
+        persons = current_menu.submenu("persons")
+        persons.submenu("search").register(
+            "invenio_app_rdm_communities.persons_detail",
             text=_("Records"),
             order=1,
             expected_args=["pid_value"],

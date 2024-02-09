@@ -31,3 +31,24 @@ def communities_detail(pid_value, community, community_ui):
         active_community_header_menu_item="search",
         endpoint=endpoint.format(pid_value=community.to_dict()["id"]),
     )
+
+
+@pass_community(serialize=True)
+def persons_detail(pid_value, community, community_ui):
+    """Person detail page."""
+    permissions = community.has_permissions_to(
+        ["update", "read", "search_requests", "search_invites", "moderate"]
+    )
+    endpoint = "/api/communities/{pid_value}/records"
+
+    return render_community_theme_template(
+        "invenio_communities/details/index.html",
+        theme_brand=community_ui.get("theme", {}).get("brand"),
+        community=community,
+        community_ui=community_ui,
+        # Pass permissions so we can disable partially UI components
+        # e.g Settings tab
+        permissions=permissions,
+        active_community_header_menu_item="search",
+        endpoint=endpoint.format(pid_value=community.to_dict()["id"]),
+    )

@@ -57,3 +57,20 @@ def communities():
         user_avatar=url,
         can_create_community=can_create_community,
     )
+
+
+@login_required
+def persons():
+    """Display user dashboard page."""
+    url = current_user_resources.users_service.links_item_tpl.expand(
+        g.identity, current_user
+    )["avatar"]
+    can_create_community = current_communities.service.check_permission(
+        g.identity, "create"
+    )
+    return render_template(
+        "invenio_app_rdm/users/persons.html",
+        searchbar_config=dict(searchUrl=get_search_url()),
+        user_avatar=url,
+        can_create_community=can_create_community,
+    )

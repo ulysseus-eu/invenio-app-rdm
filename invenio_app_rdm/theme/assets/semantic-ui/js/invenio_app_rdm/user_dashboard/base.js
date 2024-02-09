@@ -12,17 +12,17 @@ import {
   SearchAppResultsPane,
   InvenioSearchPagination,
 } from "@js/invenio_search_ui/components";
-import { i18next } from "@translations/invenio_app_rdm/i18next";
+import {i18next} from "@translations/invenio_app_rdm/i18next";
 import React from "react";
-import { ResultsList, SearchBar, Sort, buildUID } from "react-searchkit";
-import { GridResponsiveSidebarColumn } from "react-invenio-forms";
-import { Grid, Button } from "semantic-ui-react";
+import {ResultsList, SearchBar, Sort, buildUID} from "react-searchkit";
+import {GridResponsiveSidebarColumn} from "react-invenio-forms";
+import {Button, Container, Grid} from "semantic-ui-react";
 import PropTypes from "prop-types";
 import Overridable from "react-overridable";
 
 export function DashboardResultView(props) {
-  const { sortOptions, paginationOptions, currentResultsState, appName } = props;
-  const { total } = currentResultsState.data;
+  const {sortOptions, paginationOptions, currentResultsState, appName} = props;
+  const {total} = currentResultsState.data;
   return (
     total && (
       <Grid>
@@ -35,7 +35,7 @@ export function DashboardResultView(props) {
         >
           <Grid.Row>
             <Grid.Column>
-              <ResultsList />
+              <ResultsList/>
             </Grid.Column>
           </Grid.Row>
         </Overridable>
@@ -68,15 +68,10 @@ DashboardResultView.defaultProps = {
   appName: "",
 };
 
-export const DashboardSearchLayoutHOC = ({
-  searchBarPlaceholder = "",
-  appName = undefined,
-}) => {
-  const DashboardUploadsSearchLayout = (props) => {
-    const [sidebarVisible, setSidebarVisible] = React.useState(false);
-    const { config } = props;
-
-    return (
+export const DashboardSearchLayoutHOC = ({config, appName}) => {
+  const [sidebarVisible, setSidebarVisible] = React.useState(false);
+  return (
+    <Container>
       <Grid>
         <Overridable
           id={buildUID("SearchLayout.searchHeader", "", appName)}
@@ -100,7 +95,7 @@ export const DashboardSearchLayoutHOC = ({
                 verticalAlign="middle"
                 floated="right"
               >
-                <SearchBar placeholder={searchBarPlaceholder} />
+                <SearchBar placeholder={"Search in my " + config.objectSearched + "..."}/>
               </Grid.Column>
             </Grid.Row>
 
@@ -124,7 +119,7 @@ export const DashboardSearchLayoutHOC = ({
             {/* Desktop search header */}
             <Grid.Row className="computer only">
               <Grid.Column width={8} floated="right">
-                <SearchBar placeholder={searchBarPlaceholder} />
+                <SearchBar placeholder={"Search in my " + config.objectSearched + "..."}/>
               </Grid.Column>
 
               <Grid.Column width={4} textAlign="right">
@@ -151,7 +146,7 @@ export const DashboardSearchLayoutHOC = ({
             open={sidebarVisible}
             onHideClick={() => setSidebarVisible(false)}
           >
-            <SearchAppFacets aggs={config.aggs} appName={appName} />
+            <SearchAppFacets aggs={config.aggs} appName={appName}/>
           </GridResponsiveSidebarColumn>
           <Grid.Column mobile={16} tablet={16} computer={12}>
             <SearchAppResultsPane
@@ -161,12 +156,14 @@ export const DashboardSearchLayoutHOC = ({
           </Grid.Column>
         </Grid.Row>
       </Grid>
-    );
-  };
+    </Container>
+  );
+};
+DashboardSearchLayoutHOC.propTypes = {
+  config: PropTypes.object.isRequired,
+  appName: PropTypes.string,
+};
 
-  DashboardUploadsSearchLayout.propTypes = {
-    config: PropTypes.object.isRequired,
-  };
-
-  return DashboardUploadsSearchLayout;
+DashboardSearchLayoutHOC.defaultProps = {
+  appName: "",
 };
