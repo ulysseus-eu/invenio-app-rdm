@@ -84,6 +84,6 @@ export class LinksTab extends Component {
 }
 
 LinksTab.propTypes = {
-  record: PropTypes.string.isRequired,
+  record: PropTypes.object.isRequired,
   handleClose: PropTypes.func.isRequired,
 };

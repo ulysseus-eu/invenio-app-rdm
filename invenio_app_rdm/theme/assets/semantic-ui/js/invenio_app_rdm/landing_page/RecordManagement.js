@@ -117,6 +117,6 @@ RecordManagement.propTypes = {
   isDraft: PropTypes.bool.isRequired,
   isPreviewSubmissionRequest: PropTypes.bool.isRequired,
   currentUserId: PropTypes.string.isRequired,
-  recordOwnerUsername: PropTypes.object.isRequired,
+  recordOwnerUsername: PropTypes.string.isRequired,
   accessLinksSearchConfig: PropTypes.object.isRequired,
 };

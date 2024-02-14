@@ -13,17 +13,20 @@ import { i18next } from "@translations/invenio_app_rdm/i18next";
 import { Header, Container, Button, Segment } from "semantic-ui-react";
 import { CommunitiesManagementDropdown } from "./CommunitiesManagementDropdown";
 import { http, withCancel } from "react-invenio-forms";
+import { CommunityType } from "@js/invenio_rdm_records";
 
 const MAX_COMMUNITIES = 3;
 
 export class CommunitiesManagement extends Component {
   constructor(props) {
     super(props);
+    const { communityType } = props;
     this.state = {
       loading: true,
       communities: undefined,
       error: undefined,
       manageCommunitiesModalOpen: false,
+      communityType: communityType,
     };
   }
 
@@ -37,7 +40,7 @@ export class CommunitiesManagement extends Component {
 
   toggleManageCommunitiesModal = (value) => {
     if (!value) {
-      const modalDropdown = document.getElementById("modal-dropdown"); // A11y: Focus community management dropdown when modal closes
+      const modalDropdown = document.getElementById(`modal-${this.state.communityType.getSingular()}-dropdown`); // A11y: Focus community management dropdown when modal closes
       modalDropdown && modalDropdown.focus();
     }
     this.setState({ manageCommunitiesModalOpen: value });
@@ -94,6 +97,7 @@ export class CommunitiesManagement extends Component {
       recordUserCommunitySearchConfig,
       searchConfig,
       record,
+      communityType,
     } = this.props;
     const { communities, loading, error, manageCommunitiesModalOpen } = this.state;
     return (
@@ -105,7 +109,7 @@ export class CommunitiesManagement extends Component {
             className="flex align-items-baseline mt-0"
             attached="top"
           >
-            {i18next.t("Communities")}
+            {i18next.t(communityType.getPluralCapitalized())}
             {canManageRecord && (
               <CommunitiesManagementDropdown
                 actionSucceed={this.handleRefresh}
@@ -116,6 +120,7 @@ export class CommunitiesManagement extends Component {
                 recordUserCommunitySearchConfig={recordUserCommunitySearchConfig}
                 toggleManageCommunitiesModal={this.toggleManageCommunitiesModal}
                 record={record}
+                communityType={communityType}
               />
             )}
           </Header>
@@ -126,6 +131,7 @@ export class CommunitiesManagement extends Component {
               error={error}
               loading={loading}
               maxDisplayedCommunities={MAX_COMMUNITIES}
+              communityType={communityType}
             />
             <RecordCommunitiesListModal
               id="record-communities-list-modal"
@@ -136,6 +142,7 @@ export class CommunitiesManagement extends Component {
               recordCommunityEndpoint={recordCommunityEndpoint}
               permissions={permissions}
               record={record}
+              communityType={communityType}
             />
 
             {!loading && communities?.length > MAX_COMMUNITIES && (
@@ -169,4 +176,5 @@ CommunitiesManagement.propTypes = {
   userCommunitiesMemberships: PropTypes.object.isRequired,
   searchConfig: PropTypes.object.isRequired,
   record: PropTypes.object.isRequired,
+  communityType: CommunityType,
 };

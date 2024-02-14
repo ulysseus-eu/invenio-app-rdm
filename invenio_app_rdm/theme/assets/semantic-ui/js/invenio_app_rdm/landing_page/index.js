@@ -15,6 +15,7 @@ import { RecordCitationField } from "./RecordCitationField";
 import { ExportDropdown } from "./ExportDropdown";
 import { CommunitiesManagement } from "./CommunitiesManagement";
 import { OverridableContext, overrideStore } from "react-overridable";
+import { CommunityType } from "@js/invenio_rdm_records";
 
 const recordManagementAppDiv = document.getElementById("recordManagement");
 const recordManagementMobile = document.getElementById("recordManagementMobile");
@@ -24,6 +25,9 @@ const recordCitationAppDiv = document.getElementById("recordCitation");
 const recordExportDownloadDiv = document.getElementById("recordExportDownload");
 const sidebarCommunitiesManageDiv = document.getElementById(
   "sidebar-communities-manage"
+);
+const sidebarPersonsManageDiv = document.getElementById(
+  "sidebar-persons-manage"
 );
 
 if (recordManagementAppDiv) {
@@ -103,7 +107,36 @@ if (sidebarCommunitiesManageDiv) {
       permissions={JSON.parse(sidebarCommunitiesManageDiv.dataset.permissions)}
       searchConfig={JSON.parse(pendingCommunitiesSearchConfig)}
       record={JSON.parse(recordCitationAppDiv.dataset.record)}
+      communityType={new CommunityType("community")}
     />,
     sidebarCommunitiesManageDiv
+  );
+}
+
+if (sidebarPersonsManageDiv) {
+  const recordCommunitySearchConfig = JSON.parse(
+    sidebarPersonsManageDiv.dataset.recordCommunitySearchConfig
+  );
+  const pendingCommunitiesSearchConfig =
+    sidebarPersonsManageDiv.dataset.pendingCommunitiesSearchConfig;
+  ReactDOM.render(
+    <CommunitiesManagement
+      userCommunitiesMemberships={JSON.parse(
+        sidebarPersonsManageDiv.dataset.userCommunitiesMemberships
+      )}
+      recordCommunityEndpoint={
+        sidebarPersonsManageDiv.dataset.recordCommunityEndpoint
+      }
+      recordUserCommunitySearchConfig={JSON.parse(
+        sidebarPersonsManageDiv.dataset.recordUserCommunitySearchConfig
+      )}
+      canManageRecord={JSON.parse(sidebarPersonsManageDiv.dataset.canManageRecord)}
+      recordCommunitySearchConfig={recordCommunitySearchConfig}
+      permissions={JSON.parse(sidebarPersonsManageDiv.dataset.permissions)}
+      searchConfig={JSON.parse(pendingCommunitiesSearchConfig)}
+      record={JSON.parse(recordCitationAppDiv.dataset.record)}
+      communityType={new CommunityType("person")}
+    />,
+    sidebarPersonsManageDiv
   );
 }

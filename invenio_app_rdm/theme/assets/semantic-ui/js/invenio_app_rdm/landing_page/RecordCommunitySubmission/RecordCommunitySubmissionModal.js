@@ -7,6 +7,7 @@ import {
   CommunitySelectionModalComponent,
   SubmitReviewModal,
 } from "@js/invenio_rdm_records";
+import { CommunityType } from "@js/invenio_rdm_records";
 
 export class RecordCommunitySubmissionModal extends Component {
   constructor(props) {
@@ -104,15 +105,16 @@ export class RecordCommunitySubmissionModal extends Component {
       recordCommunitySearchConfig,
       handleClose,
       record,
+      communityType
     } = this.props;
     const apiConfigs = {
       allCommunities: {
         ...recordCommunitySearchConfig,
-        toggleText: i18next.t("Search in all communities"),
+        toggleText: i18next.t(`Search in all ${communityType.getPlural()}`),
       },
       myCommunities: {
         ...recordUserCommunitySearchConfig,
-        toggleText: i18next.t("Search in my communities"),
+        toggleText: i18next.t(`Search in my ${communityType.getPlural()}`),
       },
     };
 
@@ -124,10 +126,11 @@ export class RecordCommunitySubmissionModal extends Component {
           modalOpen={modalOpen}
           userCommunitiesMemberships={userCommunitiesMemberships}
           onModalChange={toggleModal}
-          modalHeader={i18next.t("Select a community")}
+          modalHeader={i18next.t(`Select a ${communityType.getSingular()}`)}
           apiConfigs={apiConfigs}
           handleClose={handleClose}
           record={record}
+          communityType={communityType}
         />
         {confirmationModalOpen && (
           <SubmitReviewModal
@@ -153,9 +156,10 @@ RecordCommunitySubmissionModal.propTypes = {
   handleSuccessAction: PropTypes.func.isRequired,
   recordCommunityEndpoint: PropTypes.string.isRequired,
   recordCommunitySearchConfig: PropTypes.object.isRequired,
-  recordUserCommunitySearchConfig: PropTypes.string.isRequired,
+  recordUserCommunitySearchConfig: PropTypes.object.isRequired,
   handleClose: PropTypes.func.isRequired,
   record: PropTypes.object.isRequired,
+  communityType: CommunityType,
 };
 
 RecordCommunitySubmissionModal.defaultProps = {

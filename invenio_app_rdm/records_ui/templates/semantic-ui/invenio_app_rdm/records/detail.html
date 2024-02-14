@@ -50,40 +50,6 @@
   <section id="banners" class="banners" aria-label="{{ _('Information banner') }}">
 
     <!-- COMMUNITY HEADER: hide it when displaying the submission request -->
-    {% if not is_preview_submission_request %}
-      {% if community %}
-        {% set is_community_restricted = community.access.visibility == 'restricted' %}
-        {% if community.theme %}
-          {% include "invenio_communities/details/header.html" %}
-        {% else %}
-          <div
-            class="ui fluid container page-subheader-outer with-submenu compact ml-0-mobile mr-0-mobile">
-            <div class="ui container page-subheader">
-              <div class="page-subheader-element">
-                <img
-                  class="ui rounded image community-header-logo"
-                  src="{{ community.links.logo | resolve_community_logo(community.id) }}"
-                  alt=""
-                />
-              </div>
-              <div class="page-subheader-element">
-                <a
-                  href="{{ url_for('invenio_app_rdm_communities.communities_detail', pid_value=community.slug) }}"> {{ community.metadata.title }}</a>
-                {% if is_community_restricted %}
-                  <span
-                    class="ui label horizontal small access-status restricted rel-ml-1"
-                    title="{{ _('Community visibility') }}"
-                    data-tooltip="{{ _('The community is restricted to users with access.') }}"
-                    data-inverted="">
-                  <i class="icon ban" aria-hidden="true"></i> {{ _("Restricted") }}
-                </span>
-                {% endif %}
-              </div>
-            </div>
-          </div>
-        {% endif %}
-      {% endif %}
-    {% endif %}
     <!-- /COMMUNITY HEADER -->
 
     <!-- PREVIEW HEADER -->

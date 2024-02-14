@@ -886,6 +886,7 @@ APP_RDM_DETAIL_SIDE_BAR_TEMPLATES = [
     "invenio_app_rdm/records/details/side_bar/versions.html",
     "invenio_app_rdm/records/details/side_bar/external_resources.html",
     "invenio_app_rdm/records/details/side_bar/communities.html",
+    "invenio_app_rdm/records/details/side_bar/persons.html",
     "invenio_app_rdm/records/details/side_bar/keywords_subjects.html",
     "invenio_app_rdm/records/details/side_bar/details.html",
     "invenio_app_rdm/records/details/side_bar/locations.html",

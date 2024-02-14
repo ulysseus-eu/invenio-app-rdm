@@ -10,10 +10,17 @@ import PropTypes from "prop-types";
 import React, { Component } from "react";
 import { Image } from "react-invenio-forms";
 import { Item, Message, Placeholder, Header } from "semantic-ui-react";
+import { CommunityType } from "@js/invenio_rdm_records";
 
 export class RecordCommunitiesList extends Component {
   render() {
-    const { communities, loading, error, maxDisplayedCommunities } = this.props;
+    const {
+      communities,
+      loading,
+      error,
+      maxDisplayedCommunities,
+      communityType,
+    } = this.props;
     let Element = null;
 
     if (loading) {
@@ -38,7 +45,7 @@ export class RecordCommunitiesList extends Component {
         <p>
           <i>
             <small>
-              {i18next.t("This record is not included in any communities yet.")}
+              {i18next.t(`This record is not included in any ${communityType.getSingular()} yet.`)}
             </small>
           </i>
         </p>
@@ -75,6 +82,7 @@ RecordCommunitiesList.propTypes = {
   communities: PropTypes.array,
   loading: PropTypes.bool,
   error: PropTypes.string,
+  communityType: CommunityType,
 };
 
 RecordCommunitiesList.defaultProps = {

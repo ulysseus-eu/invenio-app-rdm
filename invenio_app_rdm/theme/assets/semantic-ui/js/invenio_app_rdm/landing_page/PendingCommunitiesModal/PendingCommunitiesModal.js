@@ -9,6 +9,7 @@ import React, { Component } from "react";
 import PropTypes from "prop-types";
 import { Header, Modal, Button } from "semantic-ui-react";
 import { PendingCommunitiesSearch } from "./PendingCommunitiesSearch";
+import { CommunityType } from "@js/invenio_rdm_records";
 
 export class PendingCommunitiesModal extends Component {
   render() {
@@ -18,6 +19,7 @@ export class PendingCommunitiesModal extends Component {
       successActionCallback,
       handleOnOpen,
       handleOnClose,
+      communityType,
     } = this.props;
 
     return (
@@ -33,13 +35,14 @@ export class PendingCommunitiesModal extends Component {
       >
         <Modal.Header>
           <Header as="h2" size="small" id="record-communities-header" className="mt-5">
-            {i18next.t("Pending communities")}
+            {i18next.t(`Pending ${communityType.getPlural()}`)}
           </Header>
         </Modal.Header>
 
         <PendingCommunitiesSearch
           searchConfig={searchConfig}
           successActionCallback={successActionCallback}
+          communityType={communityType}
         />
 
         <Modal.Actions>
@@ -56,6 +59,7 @@ PendingCommunitiesModal.propTypes = {
   successActionCallback: PropTypes.func.isRequired,
   handleOnClose: PropTypes.func.isRequired,
   handleOnOpen: PropTypes.func.isRequired,
+  communityType: CommunityType,
 };
 
 PendingCommunitiesModal.defaultProps = {

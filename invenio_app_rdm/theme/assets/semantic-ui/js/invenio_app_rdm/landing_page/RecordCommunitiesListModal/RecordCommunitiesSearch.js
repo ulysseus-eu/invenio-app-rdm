@@ -20,6 +20,7 @@ import {
   Pagination,
 } from "react-searchkit";
 import { Modal } from "semantic-ui-react";
+import { CommunityType } from "@js/invenio_rdm_records";
 
 const appName = "InvenioAppRdm.RecordCommunitiesSearch";
 
@@ -30,8 +31,13 @@ export class RecordCommunitiesSearch extends Component {
   };
 
   render() {
-    const { recordCommunityEndpoint, permissions, recordParent, updateRecordCallback } =
-      this.props;
+    const {
+      recordCommunityEndpoint,
+      permissions,
+      recordParent,
+      updateRecordCallback,
+      communityType,
+    } = this.props;
     const overriddenComponents = {
       [`${appName}.ResultsList.item`]: parametrize(RecordCommunitiesSearchItem, {
         recordCommunityEndpoint: recordCommunityEndpoint,
@@ -67,7 +73,7 @@ export class RecordCommunitiesSearch extends Component {
                   "className": "search",
                   "aria-label": i18next.t("Search"),
                 }}
-                placeholder={i18next.t("Search for community...")}
+                placeholder={i18next.t(`Search for ${communityType.getSingular()}...`)}
               />
             </Modal.Content>
 
@@ -95,4 +101,5 @@ RecordCommunitiesSearch.propTypes = {
   updateRecordCallback: PropTypes.func.isRequired,
   permissions: PropTypes.object.isRequired,
   recordParent: PropTypes.object.isRequired,
+  communityType: CommunityType,
 };

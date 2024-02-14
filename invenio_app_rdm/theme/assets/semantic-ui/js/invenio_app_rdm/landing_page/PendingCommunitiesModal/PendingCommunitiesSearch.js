@@ -21,6 +21,7 @@ import {
   Pagination,
 } from "react-searchkit";
 import { Modal } from "semantic-ui-react";
+import { CommunityType } from "@js/invenio_rdm_records";
 
 const appName = "InvenioAppRdm.PendingCommunitiesSearch";
 
@@ -31,7 +32,10 @@ export class PendingCommunitiesSearch extends Component {
   };
 
   render() {
-    const { searchConfig } = this.props;
+    const {
+      searchConfig,
+      communityType,
+    } = this.props;
     const searchApi = new InvenioSearchApi(searchConfig["searchApi"]);
 
     const overriddenComponents = {
@@ -60,7 +64,7 @@ export class PendingCommunitiesSearch extends Component {
                   "aria-label": i18next.t("Search"),
                 }}
                 placeholder={i18next.t(
-                  "Search for pending submissions to communities..."
+                  `Search for pending submissions to ${communityType.getPlural()}...`
                 )}
               />
             </Modal.Content>
@@ -86,4 +90,5 @@ export class PendingCommunitiesSearch extends Component {
 PendingCommunitiesSearch.propTypes = {
   searchConfig: PropTypes.object.isRequired,
   successActionCallback: PropTypes.func.isRequired,
+  communityType: CommunityType,
 };

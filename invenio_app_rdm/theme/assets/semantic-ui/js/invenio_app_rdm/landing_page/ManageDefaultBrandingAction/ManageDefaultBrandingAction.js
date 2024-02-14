@@ -123,7 +123,7 @@ export class ManageDefaultBrandingAction extends Component {
 
 ManageDefaultBrandingAction.propTypes = {
   result: PropTypes.object.isRequired,
-  recordCommunityEndpoint: PropTypes.object.isRequired,
+  recordCommunityEndpoint: PropTypes.string.isRequired,
   updateRecordCallback: PropTypes.func.isRequired,
   isCommunityDefault: PropTypes.bool.isRequired,
 };

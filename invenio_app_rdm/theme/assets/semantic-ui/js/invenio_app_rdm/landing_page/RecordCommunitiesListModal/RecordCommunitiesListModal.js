@@ -9,6 +9,7 @@ import React, { Component } from "react";
 import PropTypes from "prop-types";
 import { Header, Modal, Button } from "semantic-ui-react";
 import { RecordCommunitiesSearch } from "./RecordCommunitiesSearch";
+import { CommunityType } from "@js/invenio_rdm_records";
 
 export class RecordCommunitiesListModal extends Component {
   constructor(props) {
@@ -32,6 +33,7 @@ export class RecordCommunitiesListModal extends Component {
       handleOnClose,
       trigger,
       permissions,
+      communityType,
     } = this.props;
     const { recordParent } = this.state;
 
@@ -49,7 +51,7 @@ export class RecordCommunitiesListModal extends Component {
       >
         <Modal.Header>
           <Header as="h2" size="small" id="record-communities-header" className="mt-5">
-            {i18next.t("Communities")}
+            {i18next.t(communityType.getPluralCapitalized())}
           </Header>
         </Modal.Header>
 
@@ -59,6 +61,7 @@ export class RecordCommunitiesListModal extends Component {
           permissions={permissions}
           recordParent={recordParent}
           updateRecordCallback={this.handleRecordUpdate}
+          communityType={communityType}
         />
 
         <Modal.Actions>
@@ -78,6 +81,7 @@ RecordCommunitiesListModal.propTypes = {
   handleOnOpen: PropTypes.func.isRequired,
   permissions: PropTypes.object.isRequired,
   record: PropTypes.object.isRequired,
+  communityType: CommunityType,
 };
 
 RecordCommunitiesListModal.defaultProps = {

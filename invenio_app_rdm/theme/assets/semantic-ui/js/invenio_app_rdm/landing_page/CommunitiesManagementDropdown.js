@@ -11,6 +11,7 @@ import PropTypes from "prop-types";
 import { Dropdown, Icon } from "semantic-ui-react";
 import { i18next } from "@translations/invenio_app_rdm/i18next";
 import { SuccessIcon } from "@js/invenio_communities/members";
+import { CommunityType } from "@js/invenio_rdm_records";
 
 export class CommunitiesManagementDropdown extends Component {
   constructor(props) {
@@ -89,13 +90,14 @@ export class CommunitiesManagementDropdown extends Component {
       recordCommunityEndpoint,
       recordUserCommunitySearchConfig,
       record,
+      communityType
     } = this.props;
 
     const options = [
       {
         id: "submit-to-community",
         value: "submit-to-community",
-        text: i18next.t("Submit to community"),
+        text: i18next.t(`Submit to ${communityType.getSingular()}`),
         icon: "plus",
       },
       {
@@ -107,7 +109,7 @@ export class CommunitiesManagementDropdown extends Component {
       {
         id: "manage-communities",
         value: "manage-communities",
-        text: i18next.t("Manage communities"),
+        text: i18next.t(`Manage ${communityType.getPlural()}`),
         icon: "settings",
       },
     ];
@@ -131,7 +133,7 @@ export class CommunitiesManagementDropdown extends Component {
         </div>
         <Dropdown
           ref={this.dropdownRef}
-          id="modal-dropdown"
+          id={`modal-${communityType.getSingular()}-dropdown`}
           className="manage-menu-dropdown"
           aria-label={i18next.t("Community management menu dropdown")}
           closeOnChange
@@ -154,6 +156,7 @@ export class CommunitiesManagementDropdown extends Component {
           recordCommunitySearchConfig={recordCommunitySearchConfig}
           recordUserCommunitySearchConfig={recordUserCommunitySearchConfig}
           record={record}
+          communityType={communityType}
         />
         <PendingCommunitiesModal
           modalOpen={pendingRequestModalOpen}
@@ -161,6 +164,7 @@ export class CommunitiesManagementDropdown extends Component {
           handleOnClose={() => this.togglePendingRequestsModal(false)}
           successActionCallback={this.handleSuccessAction}
           searchConfig={searchConfig}
+          communityType={communityType}
         />
       </>
     );
@@ -170,12 +174,13 @@ export class CommunitiesManagementDropdown extends Component {
 CommunitiesManagementDropdown.propTypes = {
   userCommunitiesMemberships: PropTypes.object.isRequired,
   recordCommunityEndpoint: PropTypes.string.isRequired,
-  recordCommunitySearchConfig: PropTypes.string.isRequired,
-  recordUserCommunitySearchConfig: PropTypes.string.isRequired,
+  recordCommunitySearchConfig: PropTypes.object.isRequired,
+  recordUserCommunitySearchConfig: PropTypes.object.isRequired,
   toggleManageCommunitiesModal: PropTypes.func.isRequired,
   actionSucceed: PropTypes.func,
   searchConfig: PropTypes.object.isRequired,
   record: PropTypes.object.isRequired,
+  communityType: CommunityType,
 };
 
 CommunitiesManagementDropdown.defaultProps = {

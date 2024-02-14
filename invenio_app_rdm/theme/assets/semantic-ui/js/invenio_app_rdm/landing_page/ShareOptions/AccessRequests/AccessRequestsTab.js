@@ -224,7 +224,7 @@ export class AccessRequestsTab extends Component {
 }
 
 AccessRequestsTab.propTypes = {
-  record: PropTypes.string.isRequired,
+  record: PropTypes.object.isRequired,
   successCallback: PropTypes.func.isRequired,
   handleClose: PropTypes.func.isRequired,
 };
