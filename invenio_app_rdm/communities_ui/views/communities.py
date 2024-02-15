@@ -90,3 +90,38 @@ def persons_detail(pid_value, community, community_ui):
         active_community_header_menu_item="search",
         endpoint=endpoint.format(pid_value=community.to_dict()["id"]),
     )
+
+@pass_community(serialize=True)
+def persons_home(pid_value, community, community_ui):
+    """Person home page."""
+    permissions = community.has_permissions_to(
+        [
+            "update",
+            "read",
+            "search_requests",
+            "moderate",
+        ]
+    )
+    if not permissions["can_read"]:
+        raise PermissionDeniedError()
+
+    recent_uploads = current_community_records_service.search(
+        community_id=pid_value,
+        identity=g.identity,
+        params={
+            "sort": "newest",
+            "size": 3,
+        },
+        expand=True,
+    )
+
+    records_ui = UIJSONSerializer().dump_list(recent_uploads.to_dict())["hits"]["hits"]
+
+    return render_community_theme_template(
+        "invenio_communities/details/home/index.html",
+        theme=community_ui.get("theme", {}),
+        community=community_ui,
+        permissions=permissions,
+        records=records_ui,
+    )
+
