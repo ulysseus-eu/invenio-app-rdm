@@ -126,21 +126,21 @@ def create_ui_blueprint(app):
         )
 
         persons = current_menu.submenu("persons")
-        persons.submenu("search").register(
-            "invenio_app_rdm_communities.persons_detail",
-            text=_("Records"),
-            order=2,
-            expected_args=["pid_value"],
-            **dict(icon="search", permissions=True),
-        )
-
-        communities.submenu("home").register(
+        persons.submenu("home").register(
             "invenio_app_rdm_communities.persons_home",
             text=_("Home"),
             order=1,
             visible_when=_is_branded_community,
             expected_args=["pid_value"],
             **dict(icon="home", permissions="can_read"),
+        )
+
+        persons.submenu("search").register(
+            "invenio_app_rdm_communities.persons_detail",
+            text=_("Records"),
+            order=2,
+            expected_args=["pid_value"],
+            **dict(icon="search", permissions=True),
         )
 
 
