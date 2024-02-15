@@ -13,7 +13,7 @@
 
 from copy import deepcopy
 
-from flask import current_app, g
+from flask import current_app, g, redirect
 from flask_login import login_required
 from invenio_communities.errors import CommunityDeletedError
 from invenio_communities.proxies import current_communities
@@ -372,14 +372,13 @@ def deposit_create(community=None):
     """Create a new deposit."""
     community_theme = None
     if community is not None:
-        community_theme = community.get("theme", None)
+        community_theme = community.get("theme", {})
 
-    community_use_jinja_header = community_theme is not None
-    brand = community_theme.get("brand") if community_theme else None
+    community_use_jinja_header = bool(community_theme)
 
     return render_community_theme_template(
         current_app.config["APP_RDM_DEPOSIT_FORM_TEMPLATE"],
-        theme_brand=brand,
+        theme=community_theme,
         forms_config=get_form_config(
             createUrl="/api/records",
             quota=get_quota(),
@@ -424,18 +423,18 @@ def deposit_edit(pid_value, draft=None, draft_files=None, files_locked=True):
             community = current_communities.service.read(
                 id_=community["id"], identity=g.identity
             )
-            community_theme = community.to_dict().get("theme", None)
+            community_theme = community.to_dict().get("theme", {})
         except CommunityDeletedError:
             pass
 
     # show the community branded header when there is a theme and record is published
     # for unpublished records we fallback to the react component so users can change
     # communities
-    community_use_jinja_header = community_theme is not None
+    community_use_jinja_header = bool(community_theme)
 
     return render_community_theme_template(
         current_app.config["APP_RDM_DEPOSIT_FORM_TEMPLATE"],
-        theme_brand=community_theme.get("brand") if community_theme else None,
+        theme=community_theme,
         forms_config=get_form_config(
             apiUrl=f"/api/records/{pid_value}/draft",
             # maybe quota should be serialized into the record e.g for admins
@@ -458,3 +457,9 @@ def deposit_edit(pid_value, draft=None, draft_files=None, files_locked=True):
             ]
         ),
     )
+
+
+def community_upload(pid_value):
+    """Redirection for upload to community."""
+    routes = current_app.config.get("APP_RDM_ROUTES")
+    return redirect(f"{routes['deposit_create']}?community={pid_value}")

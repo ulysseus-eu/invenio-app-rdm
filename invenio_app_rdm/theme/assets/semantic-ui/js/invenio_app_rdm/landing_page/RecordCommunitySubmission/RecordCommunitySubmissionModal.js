@@ -130,6 +130,7 @@ export class RecordCommunitySubmissionModal extends Component {
           apiConfigs={apiConfigs}
           handleClose={handleClose}
           record={record}
+          isInitialSubmission={false}
           communityType={communityType}
         />
         {confirmationModalOpen && (
@@ -159,6 +160,7 @@ RecordCommunitySubmissionModal.propTypes = {
   recordUserCommunitySearchConfig: PropTypes.object.isRequired,
   handleClose: PropTypes.func.isRequired,
   record: PropTypes.object.isRequired,
+  isInitialSubmission: PropTypes.bool,
   communityType: CommunityType,
 };
 
