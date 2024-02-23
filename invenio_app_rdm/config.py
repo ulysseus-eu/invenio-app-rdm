@@ -687,6 +687,7 @@ APP_RDM_USER_DASHBOARD_ROUTES = {
     "uploads": "/me/uploads",
     "communities": "/me/communities",
     "persons": "/me/persons",
+    "organizations": "/me/organizations",
     "requests": "/me/requests",
 }
 
@@ -887,6 +888,7 @@ APP_RDM_DETAIL_SIDE_BAR_TEMPLATES = [
     "invenio_app_rdm/records/details/side_bar/external_resources.html",
     "invenio_app_rdm/records/details/side_bar/communities.html",
     "invenio_app_rdm/records/details/side_bar/persons.html",
+    "invenio_app_rdm/records/details/side_bar/organizations.html",
     "invenio_app_rdm/records/details/side_bar/keywords_subjects.html",
     "invenio_app_rdm/records/details/side_bar/details.html",
     "invenio_app_rdm/records/details/side_bar/locations.html",
@@ -943,6 +945,8 @@ RDM_COMMUNITIES_ROUTES = {
     "community-home": "/communities/<pid_value>/",
     "person-detail": "/persons/<pid_value>/records",
     "person-home": "/persons/<pid_value>/",
+    "organization-detail": "/organizations/<pid_value>/records",
+    "organization-home": "/organizations/<pid_value>/",
 }
 
 RDM_SEARCH_USER_COMMUNITIES = {

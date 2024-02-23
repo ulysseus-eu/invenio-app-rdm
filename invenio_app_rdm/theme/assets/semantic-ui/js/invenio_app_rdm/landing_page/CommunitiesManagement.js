@@ -13,7 +13,7 @@ import { i18next } from "@translations/invenio_app_rdm/i18next";
 import { Header, Container, Button, Segment } from "semantic-ui-react";
 import { CommunitiesManagementDropdown } from "./CommunitiesManagementDropdown";
 import { http, withCancel } from "react-invenio-forms";
-import { CommunityType } from "@js/invenio_rdm_records";
+import { CommunityType } from "@js/invenio_communities";
 
 const MAX_COMMUNITIES = 3;
 

@@ -15,7 +15,7 @@ import { RecordCitationField } from "./RecordCitationField";
 import { ExportDropdown } from "./ExportDropdown";
 import { CommunitiesManagement } from "./CommunitiesManagement";
 import { OverridableContext, overrideStore } from "react-overridable";
-import { CommunityType } from "@js/invenio_rdm_records";
+import { CommunityType } from "@js/invenio_communities";
 
 const recordManagementAppDiv = document.getElementById("recordManagement");
 const recordManagementMobile = document.getElementById("recordManagementMobile");
@@ -28,6 +28,9 @@ const sidebarCommunitiesManageDiv = document.getElementById(
 );
 const sidebarPersonsManageDiv = document.getElementById(
   "sidebar-persons-manage"
+);
+const sidebarOrganizationsManageDiv = document.getElementById(
+  "sidebar-organizations-manage"
 );
 
 if (recordManagementAppDiv) {
@@ -138,5 +141,33 @@ if (sidebarPersonsManageDiv) {
       communityType={new CommunityType("person")}
     />,
     sidebarPersonsManageDiv
+  );
+}
+
+if (sidebarOrganizationsManageDiv) {
+  const recordCommunitySearchConfig = JSON.parse(
+    sidebarOrganizationsManageDiv.dataset.recordCommunitySearchConfig
+  );
+  const pendingCommunitiesSearchConfig =
+    sidebarOrganizationsManageDiv.dataset.pendingCommunitiesSearchConfig;
+  ReactDOM.render(
+    <CommunitiesManagement
+      userCommunitiesMemberships={JSON.parse(
+        sidebarOrganizationsManageDiv.dataset.userCommunitiesMemberships
+      )}
+      recordCommunityEndpoint={
+        sidebarOrganizationsManageDiv.dataset.recordCommunityEndpoint
+      }
+      recordUserCommunitySearchConfig={JSON.parse(
+        sidebarOrganizationsManageDiv.dataset.recordUserCommunitySearchConfig
+      )}
+      canManageRecord={JSON.parse(sidebarOrganizationsManageDiv.dataset.canManageRecord)}
+      recordCommunitySearchConfig={recordCommunitySearchConfig}
+      permissions={JSON.parse(sidebarOrganizationsManageDiv.dataset.permissions)}
+      searchConfig={JSON.parse(pendingCommunitiesSearchConfig)}
+      record={JSON.parse(recordCitationAppDiv.dataset.record)}
+      communityType={new CommunityType("organization")}
+    />,
+    sidebarOrganizationsManageDiv
   );
 }

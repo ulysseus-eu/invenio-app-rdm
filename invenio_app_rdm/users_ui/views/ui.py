@@ -15,7 +15,13 @@ from flask_menu import current_menu
 from invenio_i18n import lazy_gettext as _
 
 from ..searchapp import search_app_context
-from .dashboard import communities, requests, uploads, persons
+from .dashboard import (
+    communities,
+    organizations,
+    requests,
+    uploads,
+    persons
+)
 
 
 #
@@ -65,6 +71,11 @@ def create_ui_blueprint(app):
     )
 
     blueprint.add_url_rule(
+        routes["organizations"],
+        view_func=organizations,
+    )
+
+    blueprint.add_url_rule(
         routes["requests"],
         view_func=requests,
     )
@@ -83,15 +94,20 @@ def create_ui_blueprint(app):
             text=_("My communities"),
             order=2,
         )
+        user_dashboard.submenu("organizations").register(
+            "invenio_app_rdm_users.organizations",
+            text=_("My organizations"),
+            order=3,
+        )
         user_dashboard.submenu("persons").register(
             "invenio_app_rdm_users.persons",
             text=_("My persons"),
-            order=3,
+            order=4,
         )
         user_dashboard.submenu("requests").register(
             "invenio_app_rdm_users.requests",
             text=_("My requests"),
-            order=4,
+            order=5,
         )
 
     # Register context processor

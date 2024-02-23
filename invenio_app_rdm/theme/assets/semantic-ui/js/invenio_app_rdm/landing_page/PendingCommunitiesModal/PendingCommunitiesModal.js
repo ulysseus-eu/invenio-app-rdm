@@ -9,7 +9,7 @@ import React, { Component } from "react";
 import PropTypes from "prop-types";
 import { Header, Modal, Button } from "semantic-ui-react";
 import { PendingCommunitiesSearch } from "./PendingCommunitiesSearch";
-import { CommunityType } from "@js/invenio_rdm_records";
+import { CommunityType } from "@js/invenio_communities";
 
 export class PendingCommunitiesModal extends Component {
   render() {

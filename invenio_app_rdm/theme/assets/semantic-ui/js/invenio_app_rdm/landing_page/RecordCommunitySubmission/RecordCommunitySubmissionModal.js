@@ -7,7 +7,7 @@ import {
   CommunitySelectionModalComponent,
   SubmitReviewModal,
 } from "@js/invenio_rdm_records";
-import { CommunityType } from "@js/invenio_rdm_records";
+import { CommunityType } from "@js/invenio_communities";
 
 export class RecordCommunitySubmissionModal extends Component {
   constructor(props) {

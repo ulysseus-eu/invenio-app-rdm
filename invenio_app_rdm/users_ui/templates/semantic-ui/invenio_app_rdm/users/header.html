@@ -42,6 +42,12 @@
         {{ _('New person') }}
       </a>
     {% endif %}
+    {% if active_dashboard_menu_item == "organizations" %}
+      <a class="ui tiny button positive left labeled icon m-0" href="/organizations/new">
+        <i class="plus icon" aria-hidden="true"></i>
+        {{ _('New organization') }}
+      </a>
+    {% endif %}
   </div>
   <div class="ui container secondary pointing menu page-subheader pl-0">
   {% for item in current_menu.submenu('dashboard').children %}

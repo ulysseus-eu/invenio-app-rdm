@@ -11,6 +11,7 @@
 from flask import g, redirect, request, url_for
 from invenio_communities.views.communities import render_community_theme_template
 from invenio_communities.views.decorators import pass_community
+from invenio_communities.utils import CommunityType
 from invenio_rdm_records.proxies import current_community_records_service
 from invenio_rdm_records.resources.serializers import UIJSONSerializer
 from invenio_records_resources.services.errors import PermissionDeniedError
@@ -22,7 +23,8 @@ def communities_detail(pid_value, community, community_ui):
     permissions = community.has_permissions_to(
         ["update", "read", "search_requests", "search_invites", "moderate"]
     )
-    endpoint = "/api/communities/{pid_value}/records"
+    community_type = CommunityType(community.data["metadata"].get("type", {"id": "community"})["id"])
+    endpoint = f"/api/{community_type.get_plural()}/{community.to_dict()['id']}/records"
 
     return render_community_theme_template(
         "invenio_communities/records/index.html",
@@ -33,13 +35,19 @@ def communities_detail(pid_value, community, community_ui):
         # e.g Settings tab
         permissions=permissions,
         active_community_header_menu_item="search",
-        endpoint=endpoint.format(pid_value=community.to_dict()["id"]),
+        endpoint=endpoint,
     )
 
 
 @pass_community(serialize=True)
 def persons_detail(pid_value, community, community_ui):
     """Person detail page."""
+    return communities_detail(pid_value=pid_value, community=community, community_ui=community_ui)
+
+
+@pass_community(serialize=True)
+def organizations_detail(pid_value, community, community_ui):
+    """Organization detail page."""
     return communities_detail(pid_value=pid_value, community=community, community_ui=community_ui)
 
 
@@ -66,7 +74,7 @@ def communities_home(pid_value, community, community_ui):
     )
 
     if query_params or not theme_enabled:
-        if community._record.metadata.get("type") and community._record.metadata["type"]["id"] == "person":
+        if community.data["metadata"].get("type") and community.data["metadata"]["type"]["id"] == "person":
             url = url_for(
                 "invenio_app_rdm_communities.persons_detail",
                 pid_value=community._record.slug,
@@ -106,5 +114,11 @@ def communities_home(pid_value, community, community_ui):
 @pass_community(serialize=True)
 def persons_home(pid_value, community, community_ui):
     """Person home page."""
+    return communities_home(pid_value=pid_value, community=community, community_ui=community_ui)
+
+
+@pass_community(serialize=True)
+def organizations_home(pid_value, community, community_ui):
+    """Organization home page."""
     return communities_home(pid_value=pid_value, community=community, community_ui=community_ui)
 

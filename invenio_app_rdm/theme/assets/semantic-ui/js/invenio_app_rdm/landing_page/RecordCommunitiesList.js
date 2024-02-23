@@ -10,7 +10,7 @@ import PropTypes from "prop-types";
 import React, { Component } from "react";
 import { Image } from "react-invenio-forms";
 import { Item, Message, Placeholder, Header } from "semantic-ui-react";
-import { CommunityType } from "@js/invenio_rdm_records";
+import { CommunityType } from "@js/invenio_communities";
 
 export class RecordCommunitiesList extends Component {
   render() {

@@ -21,7 +21,7 @@ import {
   Pagination,
 } from "react-searchkit";
 import { Modal } from "semantic-ui-react";
-import { CommunityType } from "@js/invenio_rdm_records";
+import { CommunityType } from "@js/invenio_communities";
 
 const appName = "InvenioAppRdm.PendingCommunitiesSearch";
 

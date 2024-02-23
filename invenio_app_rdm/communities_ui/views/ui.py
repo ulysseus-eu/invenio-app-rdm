@@ -21,7 +21,14 @@ from invenio_pidstore.errors import PIDDeletedError, PIDDoesNotExistError
 from invenio_records_resources.services.errors import PermissionDeniedError
 
 from ..searchapp import search_app_context
-from .communities import communities_detail, persons_detail, communities_home, persons_home
+from .communities import (
+    communities_detail,
+    organizations_detail,
+    organizations_home,
+    persons_detail,
+    communities_home,
+    persons_home
+)
 
 
 #
@@ -96,6 +103,12 @@ def create_ui_blueprint(app):
     )
 
     blueprint.add_url_rule(
+        routes["organization-detail"],
+        view_func=organizations_detail,
+        strict_slashes=False,
+    )
+
+    blueprint.add_url_rule(
         routes["community-home"],
         view_func=communities_home,
     )
@@ -103,6 +116,11 @@ def create_ui_blueprint(app):
     blueprint.add_url_rule(
         routes["person-home"],
         view_func=persons_home,
+    )
+
+    blueprint.add_url_rule(
+        routes["organization-home"],
+        view_func=organizations_home,
     )
 
     @blueprint.before_app_first_request
@@ -136,6 +154,24 @@ def create_ui_blueprint(app):
         )
 
         persons.submenu("search").register(
+            "invenio_app_rdm_communities.persons_detail",
+            text=_("Records"),
+            order=2,
+            expected_args=["pid_value"],
+            **dict(icon="search", permissions=True),
+        )
+
+        organizations = current_menu.submenu("organizations")
+        organizations.submenu("home").register(
+            "invenio_app_rdm_communities.organizations_home",
+            text=_("Home"),
+            order=1,
+            visible_when=_is_branded_community,
+            expected_args=["pid_value"],
+            **dict(icon="home", permissions="can_read"),
+        )
+
+        organizations.submenu("search").register(
             "invenio_app_rdm_communities.persons_detail",
             text=_("Records"),
             order=2,

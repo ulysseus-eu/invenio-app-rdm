@@ -11,6 +11,7 @@
 from flask import g, render_template
 from flask_login import current_user, login_required
 from invenio_communities.proxies import current_communities
+from invenio_communities.utils import CommunityType
 from invenio_users_resources.proxies import current_user_resources
 
 from ...records_ui.views.deposits import get_search_url
@@ -42,9 +43,7 @@ def requests():
     )
 
 
-@login_required
-def communities():
-    """Display user dashboard page."""
+def communities_by_type(community_type):
     url = current_user_resources.users_service.links_item_tpl.expand(
         g.identity, current_user
     )["avatar"]
@@ -56,21 +55,23 @@ def communities():
         searchbar_config=dict(searchUrl=get_search_url()),
         user_avatar=url,
         can_create_community=can_create_community,
+        community_type=community_type,
     )
+
+
+@login_required
+def communities():
+    """Display user dashboard page."""
+    return communities_by_type(CommunityType())
 
 
 @login_required
 def persons():
     """Display user dashboard page."""
-    url = current_user_resources.users_service.links_item_tpl.expand(
-        g.identity, current_user
-    )["avatar"]
-    can_create_community = current_communities.service.check_permission(
-        g.identity, "create"
-    )
-    return render_template(
-        "invenio_app_rdm/users/persons.html",
-        searchbar_config=dict(searchUrl=get_search_url()),
-        user_avatar=url,
-        can_create_community=can_create_community,
-    )
+    return communities_by_type(CommunityType(CommunityType.person))
+
+
+@login_required
+def organizations():
+    """Display user dashboard page."""
+    return communities_by_type(CommunityType(CommunityType.organization))

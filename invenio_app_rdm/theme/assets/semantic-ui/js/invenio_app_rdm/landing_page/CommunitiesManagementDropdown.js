@@ -11,7 +11,7 @@ import PropTypes from "prop-types";
 import { Dropdown, Icon } from "semantic-ui-react";
 import { i18next } from "@translations/invenio_app_rdm/i18next";
 import { SuccessIcon } from "@js/invenio_communities/members";
-import { CommunityType } from "@js/invenio_rdm_records";
+import { CommunityType } from "@js/invenio_communities";
 
 export class CommunitiesManagementDropdown extends Component {
   constructor(props) {
