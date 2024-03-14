@@ -80,6 +80,12 @@ def communities_home(pid_value, community, community_ui):
                 pid_value=community._record.slug,
                 **request.args
             )
+        elif community.data["metadata"].get("type") and community.data["metadata"]["type"]["id"] == "organization":
+            url = url_for(
+                "invenio_app_rdm_communities.organizations_detail",
+                pid_value=community._record.slug,
+                **request.args
+            )
         else:
             url = url_for(
                 "invenio_app_rdm_communities.communities_detail",
