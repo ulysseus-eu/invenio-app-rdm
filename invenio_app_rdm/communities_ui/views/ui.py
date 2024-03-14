@@ -172,7 +172,7 @@ def create_ui_blueprint(app):
         )
 
         organizations.submenu("search").register(
-            "invenio_app_rdm_communities.persons_detail",
+            "invenio_app_rdm_communities.organizations_detail",
             text=_("Records"),
             order=2,
             expected_args=["pid_value"],
