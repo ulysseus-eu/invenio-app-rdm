@@ -1,5 +1,5 @@
 // This file is part of InvenioRDM
-// Copyright (C) 2022 CERN.
+// Copyright (C) 2022-2024 CERN.
 //
 // Invenio App RDM is free software; you can redistribute it and/or modify it
 // under the terms of the MIT License; see LICENSE file for more details.
@@ -12,6 +12,8 @@ import _get from "lodash/get";
 import { Dropdown, Icon, Item, Label } from "semantic-ui-react";
 import { SearchItemCreators } from "../../utils";
 import { CompactStats } from "../../components/CompactStats";
+import { DisplayVerifiedCommunity } from "../../components/DisplayVerifiedCommunity";
+import { DisplayPartOfCommunities } from "../../components/DisplayPartOfCommunities";
 
 export const MobileUploadsItem = ({
   result,
@@ -42,9 +44,12 @@ export const MobileUploadsItem = ({
   );
   const uniqueViews = _get(result, "stats.all_versions.unique_views", 0);
   const uniqueDownloads = _get(result, "stats.all_versions.unique_downloads", 0);
+
   return (
     <Item key={result.id} className="deposits-list-item mobile only flex">
       <Item.Content className="centered">
+        {/* FIXME: Uncomment to enable themed banner */}
+        {/* <DisplayVerifiedCommunity communities={result.parent?.communities} /> */}
         <Item.Extra className="labels-actions">
           {result.status in statuses && result.status !== "published" && (
             <Label horizontal size="small" className={statuses[result.status].color}>
@@ -87,6 +92,7 @@ export const MobileUploadsItem = ({
             ))}
             <div>
               <small>
+                <DisplayPartOfCommunities communities={result.parent?.communities} />
                 {createdDate ? (
                   <>
                     {i18next.t("Uploaded on {{uploadDate}}", {

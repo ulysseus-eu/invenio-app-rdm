@@ -1,5 +1,5 @@
 // This file is part of InvenioRDM
-// Copyright (C) 2022 CERN.
+// Copyright (C) 2022-2024 CERN.
 //
 // Invenio RDM is free software; you can redistribute it and/or modify it
 // under the terms of the MIT License; see LICENSE file for more details.
@@ -14,6 +14,8 @@ import PropTypes from "prop-types";
 import { Item, Label, Icon } from "semantic-ui-react";
 import { buildUID } from "react-searchkit";
 import { CompactStats } from "./CompactStats";
+import { DisplayVerifiedCommunity } from "./DisplayVerifiedCommunity";
+import { DisplayPartOfCommunities } from "./DisplayPartOfCommunities";
 
 class RecordsResultsListItem extends Component {
   render() {
@@ -83,6 +85,8 @@ class RecordsResultsListItem extends Component {
       >
         <Item key={key ?? result.id}>
           <Item.Content>
+            {/* FIXME: Uncomment to enable themed banner */}
+            {/* <DisplayVerifiedCommunity communities={result.parent?.communities} /> */}
             <Item.Extra className="labels-actions">
               <Label horizontal size="small" className="primary">
                 {publicationDate} ({version})
@@ -117,6 +121,7 @@ class RecordsResultsListItem extends Component {
 
               <div className="flex justify-space-between align-items-end">
                 <small>
+                  <DisplayPartOfCommunities communities={result.parent?.communities} />
                   <p>
                     {createdDate && (
                       <>

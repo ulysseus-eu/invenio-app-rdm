@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2019-2022 CERN.
+# Copyright (C) 2019-2024 CERN.
 # Copyright (C) 2019-2022 Northwestern University.
 # Copyright (C)      2022 TU Wien.
 #
@@ -8,10 +8,15 @@
 # under the terms of the MIT License; see LICENSE file for more details.
 """Request views module."""
 
-from flask import g, redirect, request, url_for
-from invenio_communities.views.communities import render_community_theme_template
+from flask import abort, g, redirect, request, url_for
+from invenio_communities.views.communities import (
+    HEADER_PERMISSIONS,
+    render_community_theme_template,
+)
 from invenio_communities.views.decorators import pass_community
 from invenio_communities.utils import CommunityType
+from invenio_pages.proxies import current_pages_service
+from invenio_pages.records.errors import PageNotFoundError
 from invenio_rdm_records.proxies import current_community_records_service
 from invenio_rdm_records.resources.serializers import UIJSONSerializer
 from invenio_records_resources.services.errors import PermissionDeniedError
@@ -20,9 +25,7 @@ from invenio_records_resources.services.errors import PermissionDeniedError
 @pass_community(serialize=True)
 def communities_detail(pid_value, community, community_ui):
     """Community detail page."""
-    permissions = community.has_permissions_to(
-        ["update", "read", "search_requests", "search_invites", "moderate"]
-    )
+    permissions = community.has_permissions_to(HEADER_PERMISSIONS)
     community_type = CommunityType(community.data["metadata"].get("type", {"id": "community"})["id"])
     endpoint = f"/api/{community_type.get_plural()}/{community.to_dict()['id']}/records"
 
@@ -54,18 +57,9 @@ def organizations_detail(pid_value, community, community_ui):
 @pass_community(serialize=True)
 def communities_home(pid_value, community, community_ui):
     """Community home page."""
-    _id = community.id
     query_params = request.args
 
-    permissions = community.has_permissions_to(
-        [
-            "update",
-            "read",
-            "search_requests",
-            "search_invites",
-            "moderate",
-        ]
-    )
+    permissions = community.has_permissions_to(HEADER_PERMISSIONS)
     if not permissions["can_read"]:
         raise PermissionDeniedError()
 
@@ -77,19 +71,19 @@ def communities_home(pid_value, community, community_ui):
         if community.data["metadata"].get("type") and community.data["metadata"]["type"]["id"] == "person":
             url = url_for(
                 "invenio_app_rdm_communities.persons_detail",
-                pid_value=community._record.slug,
+                pid_value=community.data["slug"],
                 **request.args
             )
         elif community.data["metadata"].get("type") and community.data["metadata"]["type"]["id"] == "organization":
             url = url_for(
                 "invenio_app_rdm_communities.organizations_detail",
-                pid_value=community._record.slug,
+                pid_value=community.data["slug"],
                 **request.args
             )
         else:
             url = url_for(
                 "invenio_app_rdm_communities.communities_detail",
-                pid_value=community._record.slug,
+                pid_value=community.data["slug"],
                 **request.args
             )
         return redirect(url)
@@ -100,9 +94,29 @@ def communities_home(pid_value, community, community_ui):
             params={
                 "sort": "newest",
                 "size": 3,
+                "metrics": {
+                    "total_grants": {
+                        "name": "total_grants",
+                        "type": "cardinality",
+                        "kwargs": {"field": "metadata.funding.award.id"},
+                    },
+                    "total_data": {
+                        "name": "total_data",
+                        "type": "sum",
+                        "kwargs": {"field": "files.totalbytes"},
+                    },
+                },
             },
             expand=True,
         )
+
+        # TODO resultitem does not expose aggregations except labelled facets
+        _metric_aggs = recent_uploads._results.aggregations
+        metrics = {
+            "total_records": recent_uploads.total,
+            "total_data": _metric_aggs.total_data.value,
+            "total_grants": _metric_aggs.total_grants.value,
+        }
 
         records_ui = UIJSONSerializer().dump_list(recent_uploads.to_dict())["hits"][
             "hits"
@@ -114,7 +128,30 @@ def communities_home(pid_value, community, community_ui):
             community=community_ui,
             permissions=permissions,
             records=records_ui,
+            metrics=metrics,
         )
+
+
+@pass_community(serialize=True)
+def community_static_page(pid_value, community, community_ui, **kwargs):
+    """Community static page."""
+    permissions = community.has_permissions_to(HEADER_PERMISSIONS)
+    if not permissions["can_read"]:
+        raise PermissionDeniedError()
+
+    try:
+        page = current_pages_service.read_by_url(g.identity, request.path).to_dict()
+
+    except PageNotFoundError:
+        abort(404)
+
+    return render_community_theme_template(
+        page["template_name"],
+        theme=community_ui.get("theme", {}),
+        page=page,
+        community=community_ui,
+        permissions=permissions,
+    )
 
 
 @pass_community(serialize=True)

@@ -16,6 +16,9 @@ from pathlib import Path
 from flask import abort, current_app, g, redirect, render_template, request, url_for
 from flask_login import current_user
 from invenio_base.utils import obj_or_import_string
+from invenio_communities.communities.resources.serializer import (
+    UICommunityJSONSerializer,
+)
 from invenio_communities.errors import CommunityDeletedError
 from invenio_communities.proxies import current_communities
 from invenio_communities.views.communities import render_community_theme_template
@@ -36,6 +39,7 @@ from invenio_app_rdm.records_ui.previewer.iiif_simple import (
 
 from ..utils import get_external_resources
 from .decorators import (
+    add_signposting,
     pass_file_item,
     pass_file_metadata,
     pass_include_deleted,
@@ -136,6 +140,7 @@ class PreviewFile:
 @pass_record_or_draft(expand=True)
 @pass_record_files
 @pass_record_media_files
+@add_signposting
 def record_detail(
     pid_value, record, files, media_files, is_preview=False, include_deleted=False
 ):
@@ -192,12 +197,19 @@ def record_detail(
     if record is not None and emitter is not None:
         emitter(current_app, record=record._record, via_api=False)
 
-    # NOTE: this should maybe be an expandable field instead
-    record_owner = record._record.parent.access.owner.resolve()
-    resolved_community, _ = get_record_community(record_ui)
-    theme = (
-        resolved_community.to_dict().get("theme", {}) if resolved_community else None
+    record_owner = (
+        record_ui.get("expanded", {})
+        .get("parent", {})
+        .get("access", {})
+        .get("owned_by", {})
     )
+    resolved_community, _ = get_record_community(record_ui)
+    resolved_community = (
+        UICommunityJSONSerializer().dump_obj(resolved_community.to_dict())
+        if resolved_community
+        else None
+    )
+    theme = resolved_community.get("theme", {}) if resolved_community else None
 
     return render_community_theme_template(
         current_app.config.get("APP_RDM_RECORD_LANDING_PAGE_TEMPLATE"),
@@ -227,7 +239,7 @@ def record_detail(
         external_resources=get_external_resources(record_ui),
         user_avatar=avatar,
         record_owner_username=(
-            record_owner.username if record_owner is not None else None
+            record_owner.get("username")
         ),  # record created with system_identity have not owners e.g demo
     )
 
@@ -294,6 +306,7 @@ def record_file_preview(
 
 @pass_is_preview
 @pass_file_item(is_media=False)
+@add_signposting
 def record_file_download(pid_value, file_item=None, is_preview=False, **kwargs):
     """Download a file from a record."""
     download = bool(request.args.get("download"))

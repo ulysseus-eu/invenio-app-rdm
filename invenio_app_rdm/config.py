@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2019-2023 CERN.
+# Copyright (C) 2019-2024 CERN.
 # Copyright (C) 2019-2020 Northwestern University.
 # Copyright (C) 2021 Graz University of Technology.
 # Copyright (C) 2022 KTH Royal Institute of Technology
@@ -158,7 +158,7 @@ SESSION_COOKIE_SAMESITE = "Lax"
 # =============
 # https://flask-limiter.readthedocs.io/en/stable/#configuration
 
-RATELIMIT_STORAGE_URL = "redis://localhost:6379/3"
+RATELIMIT_STORAGE_URI = "redis://localhost:6379/3"
 """Storage for ratelimiter."""
 
 # Increase defaults
@@ -779,7 +779,7 @@ APP_RDM_RECORD_EXPORTERS = {
         "name": _("GeoJSON"),
         "serializer": ("invenio_rdm_records.resources.serializers:GeoJSONSerializer"),
         "params": {"options": {"indent": 2, "sort_keys": True}},
-        "content-type": "application/vnd.geojson+json",
+        "content-type": "application/vnd.geo+json",
         "filename": "{id}.geojson",
     },
     "dcat-ap": {
@@ -943,6 +943,7 @@ RDM_REQUESTS_ROUTES = {
 RDM_COMMUNITIES_ROUTES = {
     "community-detail": "/communities/<pid_value>/records",
     "community-home": "/communities/<pid_value>/",
+    "community-static-page": "/communities/<pid_value>/pages/<path:page_slug>",
     "person-detail": "/persons/<pid_value>/records",
     "person-home": "/persons/<pid_value>/",
     "organization-detail": "/organizations/<pid_value>/records",
@@ -997,6 +998,8 @@ PREVIEWER_PREFERENCE = [
     "xml_prismjs",
     "mistune",
     "pdfjs",
+    "video_videojs",
+    "audio_videojs",
     "ipynb",
     "zip",
     "txt",

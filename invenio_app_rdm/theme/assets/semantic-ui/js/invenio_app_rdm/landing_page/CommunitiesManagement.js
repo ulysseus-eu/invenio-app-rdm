@@ -1,5 +1,5 @@
 // This file is part of InvenioRDM
-// Copyright (C) 2023 CERN.
+// Copyright (C) 2023-2024 CERN.
 //
 // Invenio App RDM is free software; you can redistribute it and/or modify it
 // under the terms of the MIT License; see LICENSE file for more details.
@@ -132,6 +132,7 @@ export class CommunitiesManagement extends Component {
               loading={loading}
               maxDisplayedCommunities={MAX_COMMUNITIES}
               communityType={communityType}
+              branded={record.parent?.communities?.default}
             />
             <RecordCommunitiesListModal
               id="record-communities-list-modal"

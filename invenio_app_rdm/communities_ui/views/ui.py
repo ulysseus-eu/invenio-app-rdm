@@ -1,17 +1,16 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2019-2022 CERN.
+# Copyright (C) 2019-2024 CERN.
 # Copyright (C) 2019-2022 Northwestern University.
 # Copyright (C)      2022 TU Wien.
-# Copyright (C) 2023 Graz University of Technology.
+# Copyright (C) 2023-2024 Graz University of Technology.
 #
 # Invenio App RDM is free software; you can redistribute it and/or modify it
 # under the terms of the MIT License; see LICENSE file for more details.
 """Communities UI blueprints module."""
 
-from flask import Blueprint, current_app, render_template, request
+from flask import Blueprint, current_app, render_template
 from flask_login import current_user
-from flask_menu import current_menu
 from invenio_communities.communities.resources.serializer import (
     UICommunityJSONSerializer,
 )
@@ -27,7 +26,8 @@ from .communities import (
     organizations_home,
     persons_detail,
     communities_home,
-    persons_home
+    persons_home,
+    community_static_page
 )
 
 
@@ -61,14 +61,6 @@ def record_tombstone_error(error):
         ),
         410,
     )
-
-
-def _is_branded_community():
-    """Function used to check if community is branded."""
-    community = request.community
-    if community.get("theme", {}).get("enabled", False):
-        return True
-    return False
 
 
 def record_permission_denied_error(error):
@@ -114,6 +106,11 @@ def create_ui_blueprint(app):
     )
 
     blueprint.add_url_rule(
+        routes["community-static-page"],
+        view_func=community_static_page,
+    )
+
+    blueprint.add_url_rule(
         routes["person-home"],
         view_func=persons_home,
     )
@@ -122,65 +119,6 @@ def create_ui_blueprint(app):
         routes["organization-home"],
         view_func=organizations_home,
     )
-
-    @blueprint.before_app_first_request
-    def register_menus():
-        """Register community menu items."""
-        show_specific_communities = current_app.config.get("COMMUNITIES_SHOW_SPECIFIC_TYPES", False)
-        communities = current_menu.submenu("communities")
-        communities.submenu("home").register(
-            "invenio_app_rdm_communities.communities_home",
-            text=_("Home"),
-            order=1,
-            visible_when=_is_branded_community,
-            expected_args=["pid_value"],
-            **dict(icon="home", permissions="can_read"),
-        )
-        communities.submenu("search").register(
-            "invenio_app_rdm_communities.communities_detail",
-            text=_("Records"),
-            order=2,
-            expected_args=["pid_value"],
-            **dict(icon="search", permissions=True),
-        )
-
-        if show_specific_communities:
-            persons = current_menu.submenu("persons")
-            persons.submenu("home").register(
-                "invenio_app_rdm_communities.persons_home",
-                text=_("Home"),
-                order=1,
-                visible_when=_is_branded_community,
-                expected_args=["pid_value"],
-                **dict(icon="home", permissions="can_read"),
-            )
-
-            persons.submenu("search").register(
-                "invenio_app_rdm_communities.persons_detail",
-                text=_("Records"),
-                order=2,
-                expected_args=["pid_value"],
-                **dict(icon="search", permissions=True),
-            )
-
-            organizations = current_menu.submenu("organizations")
-            organizations.submenu("home").register(
-                "invenio_app_rdm_communities.organizations_home",
-                text=_("Home"),
-                order=1,
-                visible_when=_is_branded_community,
-                expected_args=["pid_value"],
-                **dict(icon="home", permissions="can_read"),
-            )
-
-            organizations.submenu("search").register(
-                "invenio_app_rdm_communities.organizations_detail",
-                text=_("Records"),
-                order=2,
-                expected_args=["pid_value"],
-                **dict(icon="search", permissions=True),
-            )
-
 
     # Register error handlers
     blueprint.register_error_handler(

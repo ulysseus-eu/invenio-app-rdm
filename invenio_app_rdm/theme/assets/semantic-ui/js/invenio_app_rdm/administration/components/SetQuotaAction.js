@@ -1,6 +1,6 @@
 /*
  * // This file is part of Invenio-App-Rdm
- * // Copyright (C) 2023 CERN.
+ * // Copyright (C) 2023-2024 CERN.
  * //
  * // Invenio-App-Rdm is free software; you can redistribute it and/or modify it
  * // under the terms of the MIT License; see LICENSE file for more details.
@@ -78,7 +78,7 @@ export class SetQuotaAction extends Component {
               <p>
                 <strong>{i18next.t("Note")}:</strong>{" "}
                 {i18next.t(
-                  "This is the default quota that will be applied to any NEW buckets created by this user – it will NOT update existing buckets."
+                  "This is the default quota that will be applied to any NEW records created by this user – it will NOT update quota of existing records."
                 )}
               </p>
             </Modal.Content>

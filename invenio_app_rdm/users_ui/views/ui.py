@@ -2,7 +2,7 @@
 #
 # This file is part of Invenio.
 # Copyright (C) 2016-2021 CERN.
-# Copyright (C) 2023 Graz University of Technology.
+# Copyright (C) 2023-2024 Graz University of Technology.
 #
 # Invenio is free software; you can redistribute it and/or modify it
 # under the terms of the MIT License; see LICENSE file for more details.
@@ -11,8 +11,6 @@
 
 from flask import Blueprint, current_app, render_template
 from flask_login import current_user
-from flask_menu import current_menu
-from invenio_i18n import lazy_gettext as _
 
 from ..searchapp import search_app_context
 from .dashboard import (
@@ -94,22 +92,10 @@ def create_ui_blueprint(app):
             text=_("My communities"),
             order=2,
         )
-        show_specific_communities = current_app.config.get("COMMUNITIES_SHOW_SPECIFIC_TYPES", False)
-        if show_specific_communities:
-            user_dashboard.submenu("organizations").register(
-                "invenio_app_rdm_users.organizations",
-                text=_("My organizations"),
-                order=3,
-            )
-            user_dashboard.submenu("persons").register(
-                "invenio_app_rdm_users.persons",
-                text=_("My persons"),
-                order=4,
-            )
         user_dashboard.submenu("requests").register(
             "invenio_app_rdm_users.requests",
             text=_("My requests"),
-            order=(5 if show_specific_communities else 3),
+            order=3,
         )
 
     # Register context processor

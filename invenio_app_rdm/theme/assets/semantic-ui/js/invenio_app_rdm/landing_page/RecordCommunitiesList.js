@@ -1,5 +1,5 @@
 // This file is part of InvenioRDM
-// Copyright (C) 2023 CERN.
+// Copyright (C) 2023-2024 CERN.
 //
 // InvenioRDM is free software; you can redistribute it and/or modify it
 // under the terms of the MIT License; see LICENSE file for more details.
@@ -9,7 +9,7 @@ import _isEmpty from "lodash/isEmpty";
 import PropTypes from "prop-types";
 import React, { Component } from "react";
 import { Image } from "react-invenio-forms";
-import { Item, Message, Placeholder, Header } from "semantic-ui-react";
+import { Item, Message, Popup, Placeholder, Header, Icon } from "semantic-ui-react";
 import { CommunityType } from "@js/invenio_communities";
 
 export class RecordCommunitiesList extends Component {
@@ -19,6 +19,7 @@ export class RecordCommunitiesList extends Component {
       loading,
       error,
       maxDisplayedCommunities,
+      branded,
       communityType,
     } = this.props;
     let Element = null;
@@ -61,6 +62,15 @@ export class RecordCommunitiesList extends Component {
                 <Header as="a" href={community.links.self_html} size="small">
                   {community.metadata.title}
                 </Header>
+                {community.id === branded && community?.theme && (
+                  <p className="ml-5 display-inline-block">
+                    <Popup
+                      content="Verified community"
+                      trigger={<Icon color="green" name="check circle outline" />}
+                      position="top center"
+                    />
+                  </p>
+                )}
               </Item.Header>
             </Item.Content>
           </Item>
@@ -82,6 +92,7 @@ RecordCommunitiesList.propTypes = {
   communities: PropTypes.array,
   loading: PropTypes.bool,
   error: PropTypes.string,
+  branded: PropTypes.string,
   communityType: CommunityType,
 };
 
@@ -89,4 +100,5 @@ RecordCommunitiesList.defaultProps = {
   communities: undefined,
   loading: false,
   error: "",
+  branded: undefined,
 };
