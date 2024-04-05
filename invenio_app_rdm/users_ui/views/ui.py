@@ -94,20 +94,22 @@ def create_ui_blueprint(app):
             text=_("My communities"),
             order=2,
         )
-        user_dashboard.submenu("organizations").register(
-            "invenio_app_rdm_users.organizations",
-            text=_("My organizations"),
-            order=3,
-        )
-        user_dashboard.submenu("persons").register(
-            "invenio_app_rdm_users.persons",
-            text=_("My persons"),
-            order=4,
-        )
+        show_specific_communities = current_app.config.get("COMMUNITIES_SHOW_SPECIFIC_TYPES", False)
+        if show_specific_communities:
+            user_dashboard.submenu("organizations").register(
+                "invenio_app_rdm_users.organizations",
+                text=_("My organizations"),
+                order=3,
+            )
+            user_dashboard.submenu("persons").register(
+                "invenio_app_rdm_users.persons",
+                text=_("My persons"),
+                order=4,
+            )
         user_dashboard.submenu("requests").register(
             "invenio_app_rdm_users.requests",
             text=_("My requests"),
-            order=5,
+            order=(5 if show_specific_communities else 3),
         )
 
     # Register context processor

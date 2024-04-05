@@ -126,6 +126,7 @@ def create_ui_blueprint(app):
     @blueprint.before_app_first_request
     def register_menus():
         """Register community menu items."""
+        show_specific_communities = current_app.config.get("COMMUNITIES_SHOW_SPECIFIC_TYPES", False)
         communities = current_menu.submenu("communities")
         communities.submenu("home").register(
             "invenio_app_rdm_communities.communities_home",
@@ -143,41 +144,42 @@ def create_ui_blueprint(app):
             **dict(icon="search", permissions=True),
         )
 
-        persons = current_menu.submenu("persons")
-        persons.submenu("home").register(
-            "invenio_app_rdm_communities.persons_home",
-            text=_("Home"),
-            order=1,
-            visible_when=_is_branded_community,
-            expected_args=["pid_value"],
-            **dict(icon="home", permissions="can_read"),
-        )
+        if show_specific_communities:
+            persons = current_menu.submenu("persons")
+            persons.submenu("home").register(
+                "invenio_app_rdm_communities.persons_home",
+                text=_("Home"),
+                order=1,
+                visible_when=_is_branded_community,
+                expected_args=["pid_value"],
+                **dict(icon="home", permissions="can_read"),
+            )
 
-        persons.submenu("search").register(
-            "invenio_app_rdm_communities.persons_detail",
-            text=_("Records"),
-            order=2,
-            expected_args=["pid_value"],
-            **dict(icon="search", permissions=True),
-        )
+            persons.submenu("search").register(
+                "invenio_app_rdm_communities.persons_detail",
+                text=_("Records"),
+                order=2,
+                expected_args=["pid_value"],
+                **dict(icon="search", permissions=True),
+            )
 
-        organizations = current_menu.submenu("organizations")
-        organizations.submenu("home").register(
-            "invenio_app_rdm_communities.organizations_home",
-            text=_("Home"),
-            order=1,
-            visible_when=_is_branded_community,
-            expected_args=["pid_value"],
-            **dict(icon="home", permissions="can_read"),
-        )
+            organizations = current_menu.submenu("organizations")
+            organizations.submenu("home").register(
+                "invenio_app_rdm_communities.organizations_home",
+                text=_("Home"),
+                order=1,
+                visible_when=_is_branded_community,
+                expected_args=["pid_value"],
+                **dict(icon="home", permissions="can_read"),
+            )
 
-        organizations.submenu("search").register(
-            "invenio_app_rdm_communities.organizations_detail",
-            text=_("Records"),
-            order=2,
-            expected_args=["pid_value"],
-            **dict(icon="search", permissions=True),
-        )
+            organizations.submenu("search").register(
+                "invenio_app_rdm_communities.organizations_detail",
+                text=_("Records"),
+                order=2,
+                expected_args=["pid_value"],
+                **dict(icon="search", permissions=True),
+            )
 
 
     # Register error handlers
