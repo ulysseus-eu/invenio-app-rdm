@@ -14,6 +14,7 @@ from flask_login import current_user, login_required
 from invenio_communities.config import COMMUNITIES_ROLES
 from invenio_communities.members.services.request import CommunityInvitation
 from invenio_communities.proxies import current_identities_cache
+from invenio_communities.subcommunities.services.request import SubCommunityRequest
 from invenio_communities.utils import identity_cache_key
 from invenio_communities.views.communities import render_community_theme_template
 from invenio_communities.views.decorators import pass_community
@@ -48,7 +49,7 @@ def _resolve_topic_record(request):
     user_owns_request = str(creator_id) == str(current_user.id)
 
     if request["is_closed"] and not user_owns_request:
-        return dict(permissions={}, record_ui=None)
+        return dict(permissions={}, record_ui=None, record=None)
 
     record = None
     # parse the topic field to get the draft/record pid `record:abcd-efgh`
@@ -111,9 +112,9 @@ def _resolve_topic_record(request):
                 "read",
             ]
         )
-        return dict(permissions=permissions, record_ui=record_ui)
+        return dict(permissions=permissions, record_ui=record_ui, record=record)
 
-    return dict(permissions={}, record_ui=None)
+    return dict(permissions={}, record_ui=None, record=None)
 
 
 def _resolve_record_or_draft_files(record, request):
@@ -175,17 +176,18 @@ def user_dashboard_request_view(request, **kwargs):
 
     if has_record_topic:
         topic = _resolve_topic_record(request)
-        record = topic["record_ui"]  # None when draft
-        is_draft = record["is_draft"] if record else False
+        record_ui = topic["record_ui"]  # None when draft
+        record = topic["record"]  # None when draft
+        is_draft = record_ui["is_draft"] if record_ui else False
 
-        files = _resolve_record_or_draft_files(record, request)
-        media_files = _resolve_record_or_draft_media_files(record, request)
+        files = _resolve_record_or_draft_files(record_ui, request)
+        media_files = _resolve_record_or_draft_media_files(record_ui, request)
         return render_template(
             f"invenio_requests/{request_type}/index.html",
             base_template="invenio_app_rdm/users/base.html",
             user_avatar=avatar,
             invenio_request=request.to_dict(),
-            record=record,
+            record=record_ui,
             permissions=topic["permissions"],
             is_preview=is_draft,  # preview only when draft
             is_draft=is_draft,
@@ -211,13 +213,13 @@ def user_dashboard_request_view(request, **kwargs):
         )
 
     topic = _resolve_topic_record(request)
-    record = topic["record_ui"]
+    record_ui = topic["record_ui"]
 
     return render_template(
         f"invenio_requests/{request_type}/index.html",
         base_template="invenio_app_rdm/users/base.html",
         user_avatar=avatar,
-        record=record,
+        record=record_ui,
         permissions=topic["permissions"],
         invenio_request=request.to_dict(),
         request_is_accepted=request_is_accepted,
@@ -239,26 +241,28 @@ def community_dashboard_request_view(request, community, community_ui, **kwargs)
     is_draft_submission = request_type == CommunitySubmission.type_id
     is_record_inclusion = request_type == CommunityInclusion.type_id
     is_member_invitation = request_type == CommunityInvitation.type_id
+    is_subcommunity_request = request_type == SubCommunityRequest.type_id
     request_is_accepted = request["status"] == AcceptAction.status_to
 
-    if is_draft_submission or is_record_inclusion:
-        permissions = community.has_permissions_to(
-            ["update", "read", "search_requests", "search_invites"]
-        )
+    permissions = community.has_permissions_to(
+        ["update", "read", "search_requests", "search_invites", "submit_record"]
+    )
 
+    if is_draft_submission or is_record_inclusion:
         topic = _resolve_topic_record(request)
-        record = topic["record_ui"]  # None when draft
-        is_draft = record["is_draft"] if record else False
+        record_ui = topic["record_ui"]  # None when draft
+        record = topic["record"]  # None when draft
+        is_draft = record_ui["is_draft"] if record_ui else False
 
         permissions.update(topic["permissions"])
-        files = _resolve_record_or_draft_files(record, request)
-        media_files = _resolve_record_or_draft_media_files(record, request)
+        files = _resolve_record_or_draft_files(record_ui, request)
+        media_files = _resolve_record_or_draft_media_files(record_ui, request)
         return render_community_theme_template(
             f"invenio_requests/{request_type}/index.html",
             theme=community.to_dict().get("theme", {}),
             base_template="invenio_communities/details/base.html",
             invenio_request=request.to_dict(),
-            record=record,
+            record=record_ui,
             community=community_ui,
             permissions=permissions,
             is_preview=is_draft,  # preview only when draft
@@ -274,9 +278,6 @@ def community_dashboard_request_view(request, community, community_ui, **kwargs)
         )
 
     elif is_member_invitation:
-        permissions = community.has_permissions_to(
-            ["update", "read", "search_requests", "search_invites"]
-        )
         if not permissions["can_search_invites"]:
             raise PermissionDeniedError()
 
@@ -286,6 +287,19 @@ def community_dashboard_request_view(request, community, community_ui, **kwargs)
             base_template="invenio_communities/details/members/base.html",
             invenio_request=request.to_dict(),
             community=community.to_dict(),
+            permissions=permissions,
+            request_is_accepted=request_is_accepted,
+            user_avatar=avatar,
+            include_deleted=False,
+        )
+
+    elif is_subcommunity_request:
+        return render_community_theme_template(
+            f"invenio_requests/{request_type}/index.html",
+            theme=community.to_dict().get("theme", {}),
+            base_template="invenio_communities/details/base.html",
+            invenio_request=request.to_dict(),
+            community=community_ui,
             permissions=permissions,
             request_is_accepted=request_is_accepted,
             user_avatar=avatar,

@@ -1,6 +1,6 @@
 /*
  * This file is part of Invenio.
- * Copyright (C) 2022 CERN.
+ * Copyright (C) 2022-2024 CERN.
  *
  * Invenio is free software; you can redistribute it and/or modify it
  * under the terms of the MIT License; see LICENSE file for more details.
@@ -13,7 +13,6 @@ import { Table, Dropdown, Icon, Button } from "semantic-ui-react";
 import { withState } from "react-searchkit";
 import { AdminUIRoutes } from "@js/invenio_administration/src/routes";
 import { i18next } from "@translations/invenio_app_rdm/i18next";
-import isEmpty from "lodash/isEmpty";
 
 class SearchResultItemComponent extends Component {
   refreshAfterAction = () => {
@@ -152,8 +151,8 @@ class SearchResultItemComponent extends Component {
               title={title}
               resourceName={resourceName}
               editUrl={AdminUIRoutes.editView(listUIEndpoint, result, idKeyPath)}
-              displayEdit
-              displayDelete
+              displayEdit={displayEdit}
+              displayDelete={displayDelete}
               actions={actions}
               resource={result}
               idKeyPath={idKeyPath}

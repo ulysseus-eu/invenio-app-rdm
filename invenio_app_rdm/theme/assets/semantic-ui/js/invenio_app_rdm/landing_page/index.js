@@ -1,5 +1,5 @@
 // This file is part of InvenioRDM
-// Copyright (C) 2020-2021 CERN.
+// Copyright (C) 2020-2024 CERN.
 // Copyright (C) 2020-2021 Northwestern University.
 // Copyright (C) 2021 Graz University of Technology.
 // Copyright (C) 2023 TU Wien.
@@ -50,9 +50,7 @@ function renderRecordManagement(element) {
         )}
         currentUserId={recordManagementAppDiv.dataset.currentUserId}
         recordOwnerUsername={recordManagementAppDiv.dataset.recordOwnerUsername}
-        accessLinksSearchConfig={JSON.parse(
-          recordManagementAppDiv.dataset.accessLinksSearchConfig
-        )}
+        groupsEnabled={JSON.parse(recordManagementAppDiv.dataset.groupsEnabled)}
       />
     </OverridableContext.Provider>,
     element

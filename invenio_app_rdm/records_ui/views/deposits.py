@@ -21,10 +21,11 @@ from invenio_communities.views.communities import render_community_theme_templat
 from invenio_i18n import lazy_gettext as _
 from invenio_i18n.ext import current_i18n
 from invenio_rdm_records.proxies import current_rdm_records
-from invenio_rdm_records.records.api import get_quota
+from invenio_rdm_records.records.api import get_files_quota
 from invenio_rdm_records.resources.serializers import UIJSONSerializer
 from invenio_rdm_records.services.schemas import RDMRecordSchema
 from invenio_rdm_records.services.schemas.utils import dump_empty
+from invenio_records_resources.services.errors import PermissionDeniedError
 from invenio_search.engine import dsl
 from invenio_vocabularies.proxies import current_service as vocabulary_service
 from invenio_vocabularies.records.models import VocabularyScheme
@@ -32,7 +33,12 @@ from marshmallow_utils.fields.babel import gettext_from_dict
 from sqlalchemy.orm import load_only
 
 from ..utils import set_default_value
-from .decorators import pass_draft, pass_draft_community, pass_draft_files
+from .decorators import (
+    pass_draft,
+    pass_draft_community,
+    pass_draft_files,
+    secret_link_or_login_required,
+)
 from .filters import get_scheme_label
 
 
@@ -148,9 +154,7 @@ class VocabulariesOptions:
             {
                 "icon": hit.get("icon", ""),
                 "id": hit["id"],
-                "subtype_name": self._get_type_subtype_label(hit, type_labels)[
-                    1
-                ],  # noqa
+                "subtype_name": self._get_type_subtype_label(hit, type_labels)[1],
                 "type_name": self._get_type_subtype_label(hit, type_labels)[0],
             }
             for hit in subset_resource_types.to_dict()["hits"]["hits"]
@@ -370,6 +374,12 @@ def new_record():
 @pass_draft_community
 def deposit_create(community=None):
     """Create a new deposit."""
+    can_create = current_rdm_records.records_service.check_permission(
+        g.identity, "create"
+    )
+    if not can_create:
+        raise PermissionDeniedError()
+
     community_theme = None
     if community is not None:
         community_theme = community.get("theme", {})
@@ -381,7 +391,7 @@ def deposit_create(community=None):
         theme=community_theme,
         forms_config=get_form_config(
             createUrl="/api/records",
-            quota=get_quota(),
+            quota=get_files_quota(),
             hide_community_selection=community_use_jinja_header,
         ),
         searchbar_config=dict(searchUrl=get_search_url()),
@@ -393,6 +403,7 @@ def deposit_create(community=None):
         files_locked=False,
         permissions=get_record_permissions(
             [
+                "manage",
                 "manage_files",
                 "delete_draft",
                 "manage_record_access",
@@ -401,11 +412,19 @@ def deposit_create(community=None):
     )
 
 
-@login_required
+@secret_link_or_login_required()
 @pass_draft(expand=True)
 @pass_draft_files
 def deposit_edit(pid_value, draft=None, draft_files=None, files_locked=True):
     """Edit an existing deposit."""
+    # don't show draft's deposit form if the user can't edit it
+    service = current_rdm_records.records_service
+    can_edit_draft = service.check_permission(
+        g.identity, "update_draft", record=draft._record
+    )
+    if not can_edit_draft:
+        raise PermissionDeniedError()
+
     files_dict = None if draft_files is None else draft_files.to_dict()
     ui_serializer = UIJSONSerializer()
     record = ui_serializer.dump_obj(draft.to_dict())
@@ -438,7 +457,7 @@ def deposit_edit(pid_value, draft=None, draft_files=None, files_locked=True):
         forms_config=get_form_config(
             apiUrl=f"/api/records/{pid_value}/draft",
             # maybe quota should be serialized into the record e.g for admins
-            quota=get_quota(draft._record),
+            quota=get_files_quota(draft._record),
             # hide react community component
             hide_community_selection=community_use_jinja_header,
         ),
@@ -450,6 +469,7 @@ def deposit_edit(pid_value, draft=None, draft_files=None, files_locked=True):
         files_locked=files_locked,
         permissions=draft.has_permissions_to(
             [
+                "manage",
                 "new_version",
                 "delete_draft",
                 "manage_files",

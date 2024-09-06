@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2019-2021 CERN.
+# Copyright (C) 2019-2024 CERN.
 # Copyright (C) 2019-2021 Northwestern University.
 # Copyright (C)      2021 TU Wien.
 #
@@ -11,7 +11,8 @@
 
 from functools import wraps
 
-from flask import g, make_response, redirect, request, url_for
+from flask import g, make_response, redirect, request, session, url_for
+from flask_login import login_required
 from invenio_communities.communities.resources.serializer import (
     UICommunityJSONSerializer,
 )
@@ -79,7 +80,7 @@ def pass_draft(expand=False):
                 kwargs["draft"] = draft
                 kwargs["files_locked"] = (
                     record_service.config.lock_edit_published_files(
-                        record_service, g.identity, record=draft._record
+                        record_service, g.identity, draft=draft, record=draft._record
                     )
                 )
                 return f(**kwargs)
@@ -381,3 +382,24 @@ def add_signposting(f):
         return response
 
     return view
+
+
+def secret_link_or_login_required():
+    """Skip login redirection check for requests with secret links.
+
+    If access has been granted via a secret link, then permissions are checked
+    in the dedicated view.
+    """
+
+    def decorator(f):
+        @wraps(f)
+        def view(**kwargs):
+            secret_link_token_arg = "token"
+            session_token = session.get(secret_link_token_arg, None)
+            if session_token is None:
+                login_required(f)
+            return f(**kwargs)
+
+        return view
+
+    return decorator

@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2022 CERN.
+# Copyright (C) 2022-2024 CERN.
 #
 # Invenio-App-RDM is free software; you can redistribute it and/or modify
 # it under the terms of the MIT License; see LICENSE file for more details.
 
 """Command-line tools for invenio app rdm."""
+
 import click
 from flask.cli import with_appcontext
 from invenio_access.permissions import system_identity
@@ -81,5 +82,14 @@ def rebuild_all_indices(order):
         service = services[service_to_reindex]
         if hasattr(service, "rebuild_index"):
             click.echo(f"Reindexing {service_to_reindex}... ", nl=False)
-            service.rebuild_index(system_identity)
-            click.secho("Done.", fg="green")
+            try:
+                service.rebuild_index(system_identity)
+            except NotImplementedError:
+                click.secho(
+                    f"{service_to_reindex} does not use the search cluster, skipping.",
+                    fg="green",
+                )
+                continue
+            else:
+                # success
+                click.secho("Done.", fg="green")

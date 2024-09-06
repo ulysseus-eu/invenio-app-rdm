@@ -1,5 +1,5 @@
 // This file is part of InvenioRDM
-// Copyright (C) 2024-2024 CERN.
+// Copyright (C) 2024 CERN.
 //
 // Invenio App RDM is free software; you can redistribute it and/or modify it
 // under the terms of the MIT License; see LICENSE file for more details.
@@ -27,24 +27,25 @@ export const DisplayVerifiedCommunity = ({ communities }) => {
   };
 
   const verifiedCommunity = filterBrandedCommunity(communities);
+
+  if (!verifiedCommunity) {
+    return null;
+  }
+
   return (
-    <>
-      {verifiedCommunity && (
-        <Label
-          as="a"
-          href={`/communities/${verifiedCommunity.slug}`}
-          style={{ backgroundColor: verifiedCommunity?.theme?.style?.primaryColor }}
-          className="themed-community-label"
-        >
-          {verifiedCommunity.metadata.title}
-          <Image
-            className="themed-community-logo right-floated"
-            src={`/api/communities/${verifiedCommunity.slug}/logo`}
-            alt=""
-          />
-        </Label>
-      )}
-    </>
+    <Label
+      as="a"
+      href={`/communities/${verifiedCommunity.slug}`}
+      style={{ backgroundColor: verifiedCommunity?.theme?.style?.primaryColor }}
+      className="themed-community-label"
+    >
+      {verifiedCommunity.metadata.title}
+      <Image
+        className="themed-community-logo right-floated"
+        src={`/api/communities/${verifiedCommunity.slug}/logo`}
+        alt=""
+      />
+    </Label>
   );
 };
 

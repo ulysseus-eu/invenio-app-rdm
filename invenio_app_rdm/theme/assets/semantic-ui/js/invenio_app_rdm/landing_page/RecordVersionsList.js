@@ -1,5 +1,5 @@
 // This file is part of InvenioRDM
-// Copyright (C) 2020-2021 CERN.
+// Copyright (C) 2020-2024 CERN.
 // Copyright (C) 2020-2021 Northwestern University.
 // Copyright (C) 2021 Graz University of Technology.
 //
@@ -33,10 +33,12 @@ const RecordVersionItem = ({ item, activeVersion }) => {
     <List.Item key={item.id} {...(activeVersion && { className: "version active" })}>
       <List.Content floated="left">
         {activeVersion ? (
-          <span>{i18next.t("Version {{version}}", { version: item.version })}</span>
+          <span className="text-break">
+            {i18next.t("Version {{- version}}", { version: item.version })}
+          </span>
         ) : (
-          <a href={`/records/${item.id}`}>
-            {i18next.t("Version {{version}}", { version: item.version })}
+          <a href={`/records/${item.id}`} className="text-break">
+            {i18next.t("Version {{- version}}", { version: item.version })}
           </a>
         )}
 
@@ -86,24 +88,24 @@ export const RecordVersionsList = ({ record, isPreview }) => {
   const [currentRecordInResults, setCurrentRecordInResults] = useState(false);
   const [recordVersions, setRecordVersions] = useState({});
 
-  const fetchVersions = async () => {
-    return await http.get(
-      `${recordDeserialized.links.versions}?size=${NUMBER_OF_VERSIONS}&sort=version&allversions=true`,
-      {
-        headers: {
-          Accept: "application/vnd.inveniordm.v1+json",
-        },
-        withCredentials: true,
-      }
-    );
-  };
-
-  const cancellableFetchCitation = withCancel(fetchVersions());
-
   useEffect(() => {
-    async function fetchVersions() {
+    const fetchVersions = async () => {
+      return await http.get(
+        `${recordDeserialized.links.versions}?size=${NUMBER_OF_VERSIONS}&sort=version&allversions=true`,
+        {
+          headers: {
+            Accept: "application/vnd.inveniordm.v1+json",
+          },
+          withCredentials: true,
+        }
+      );
+    };
+
+    const cancellableFetchVersions = withCancel(fetchVersions());
+
+    async function fetchVersionsAndSetState() {
       try {
-        const result = await cancellableFetchCitation.promise;
+        const result = await cancellableFetchVersions.promise;
         let { hits, total } = result.data.hits;
         hits = hits.map(deserializeRecord);
         setCurrentRecordInResults(hits.some((record) => record.id === recid));
@@ -116,13 +118,12 @@ export const RecordVersionsList = ({ record, isPreview }) => {
         }
       }
     }
-    fetchVersions();
+    fetchVersionsAndSetState();
 
     return () => {
-      cancellableFetchCitation?.cancel();
+      cancellableFetchVersions?.cancel();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [recordDeserialized.links.versions, recid]);
 
   const loadingcmp = () => {
     return isPreview ? (

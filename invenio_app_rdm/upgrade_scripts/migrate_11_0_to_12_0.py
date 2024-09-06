@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2023 CERN.
+# Copyright (C) 2023-2024 CERN.
+# Copyright (C) 2024 Graz University of Technology.
 #
 # Invenio-App-RDM is free software; you can redistribute it and/or modify
 # it under the terms of the MIT License; see LICENSE file for more details.
@@ -11,12 +12,42 @@ Disclaimer: This script is intended to be executed *only once*, namely when
 upgrading from InvenioRDM 11.0 to 12.0!
 If this script is executed at any other time, probably the best case scenario
 is that nothing happens!
+
+
+This script has been tested with following data:
+
+- user
+  - demo records of v11
+  - demo communities of v11
+  - cli created user of v11
+  - ui created community (com_a)
+  - ui created community private (com_b)
+  - ui created record (rec_a.v1)
+  - ui created v2 of record (rec_a.v1)
+  - ui created record (rec_b.v1) added to community (com_a)
+  - ui created draft (dra_a)
+  - ui created draft (dra_b) added to community (com_b)
+  - repository with records without managed doi
+  - repository with records with managed doi
+  - repository with records with managed doi without parent doi after migration
+  - base vocabularies (no customized) usable after migration
+  - record (rec_a.v1, rec_a.v2) findable after migration and rebuild of index
+
+- administration
+  - user panel list of users visible
+  - drafts visible
+  - records visible
 """
+import sys
 
 from click import secho
+from flask import current_app
+from invenio_access.permissions import system_identity
 from invenio_communities.communities.records.api import Community
 from invenio_communities.communities.records.systemfields.access import ReviewPolicyEnum
 from invenio_db import db
+from invenio_rdm_records.fixtures import PrioritizedVocabulariesFixtures
+from invenio_rdm_records.proxies import current_rdm_records
 from invenio_rdm_records.records.api import RDMDraft, RDMRecord
 
 
@@ -37,6 +68,7 @@ def execute_upgrade():
         """Update parent schema and parent communities for older records."""
         new_parent_schema = "local://records/parent-v3.0.0.json"
         record.parent["$schema"] = new_parent_schema
+
         if (
             isinstance(record.parent["access"]["owned_by"], list)
             and len(record.parent["access"]["owned_by"]) > 0
@@ -45,6 +77,30 @@ def execute_upgrade():
                 "user": record.parent["access"]["owned_by"][0]["user"]
             }
 
+        if "pids" not in record.parent:
+            record.parent["pids"] = {}
+
+            if (
+                current_app.config["DATACITE_ENABLED"]
+                and "doi" in current_app.config["RDM_PARENT_PERSISTENT_IDENTIFIERS"]
+                and current_app.config["RDM_PARENT_PERSISTENT_IDENTIFIERS"]["doi"][
+                    "is_enabled"
+                ]
+            ):
+                pids = current_rdm_records.records_service.pids.parent_pid_manager.create_all(
+                    record.parent, pids={}, schemes={"doi"}
+                )
+                current_rdm_records.records_service.pids.parent_pid_manager.reserve_all(
+                    record.parent, pids
+                )
+                record.parent["pids"] = pids
+                current_rdm_records.records_service.pids.register_or_update(
+                    id_=record["id"],
+                    identity=system_identity,
+                    scheme="doi",
+                    parent=True,
+                )
+
     def update_record(record):
         # skipping deleted records because can't be committed
         if record.is_deleted:
@@ -52,6 +108,10 @@ def execute_upgrade():
 
         try:
             secho(f"Updating record : {record.pid.pid_value}", fg="yellow")
+
+            # otherwise the save would not work, due to new attributes
+            # (media_files, parent_doi) used
+            record["$schema"] = "local://records/record-v6.0.0.json"
 
             # Initialize media files as disabled if not any
             record.setdefault("media_files", {"enabled": False})
@@ -67,25 +127,33 @@ def execute_upgrade():
             secho(f"> Updated record: {record.pid.pid_value}\n", fg="green")
             return None
         except Exception as e:
-            secho("> Error {}".format(repr(e)), fg="red")
-            error = "Record {} failed to update".format(record.pid.pid_value)
+            secho(f"> Error {repr(e)}", fg="red")
+            error = f"Record {record.pid.pid_value} failed to update"
             return error
 
     secho("Starting data migration...", fg="green")
+
+    # upgrading vocabularies
+    pvf = PrioritizedVocabulariesFixtures(system_identity)
+    pvf.load()
 
     # Migrating communities
     communities = Community.model_cls.query.all()
 
     for community_data in communities:
         community = Community(community_data.data, model=community_data)
-        migrate_review_policy(community)
-        community.commit()
+
+        # production data could have problems without it
+        if community:
+            migrate_review_policy(community)
+            community.commit()
 
     # Migrating records and drafts
     errors = []
     for record_metadata in RDMRecord.model_cls.query.all():
         record = RDMRecord(record_metadata.data, model=record_metadata)
         error = update_record(record)
+
         if error:
             errors.append(error)
 
@@ -98,7 +166,7 @@ def execute_upgrade():
     success = not errors
 
     if success:
-        secho(f"Commiting to DB", nl=True)
+        secho("Commiting to DB", nl=True)
         db.session.commit()
         secho(
             "Data migration completed, please rebuild the search indices now.",
@@ -106,7 +174,7 @@ def execute_upgrade():
         )
 
     else:
-        secho(f"Rollback", nl=True)
+        secho("Rollback", nl=True)
         db.session.rollback()
         secho(
             "Upgrade aborted due to the following errors:",
@@ -123,7 +191,7 @@ def execute_upgrade():
         )
         secho(msg, fg="yellow", err=True)
 
-    # TODO create parent DOIs? Or warn that new records will have one?
+        sys.exit(1)
 
 
 # if the script is executed on its own, perform the upgrade

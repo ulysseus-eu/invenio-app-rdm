@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2019-2021 CERN.
+# Copyright (C) 2019-2024 CERN.
 # Copyright (C) 2019-2021 Northwestern University.
 # Copyright (C) 2021-2023 TU Wien.
 #
@@ -100,10 +100,11 @@ class PreviewFile:
     `invenio_previewer.api.PreviewFile`.
     """
 
-    def __init__(self, file_item, record_pid_value, url=None):
+    def __init__(self, file_item, record_pid_value, record=None, url=None):
         """Create a new PreviewFile."""
         self.file = file_item
         self.data = file_item.data
+        self.record = record
         self.size = self.data["size"]
         self.filename = self.data["key"]
         self.bucket = self.data["bucket_id"]
@@ -236,7 +237,7 @@ def record_detail(
         include_deleted=include_deleted,
         is_draft=is_draft,
         community=resolved_community,
-        external_resources=get_external_resources(record_ui),
+        external_resources=get_external_resources(record),
         user_avatar=avatar,
         record_owner_username=(
             record_owner.get("username")
@@ -282,10 +283,6 @@ def record_file_preview(
     **kwargs,
 ):
     """Render a preview of the specified file."""
-    # Try to see if specific previewer is set
-    # TODO: what's the analog of: file_previewer = fileobj.get("previewer") ?
-    file_previewer = file_metadata.data.get("previewer")
-
     url = url_for(
         "invenio_app_rdm_records.record_file_download",
         pid_value=pid_value,
@@ -294,10 +291,16 @@ def record_file_preview(
     )
 
     # Find a suitable previewer
-    fileobj = PreviewFile(file_metadata, pid_value, url)
-    for plugin in current_previewer.iter_previewers(
-        previewers=[file_previewer] if file_previewer else None
-    ):
+    fileobj = PreviewFile(file_metadata, pid_value, record, url)
+    # Try to see if specific previewer preference is set for the file
+    file_previewer = (file_metadata.data.get("metadata") or {}).get("previewer")
+    if file_previewer:
+        previewer = current_previewer.previewers.get(file_previewer)
+        if previewer and previewer.can_preview(fileobj):
+            return previewer.preview(fileobj)
+
+    # Go through all previewers to find the first one that can preview the file
+    for plugin in current_previewer.iter_previewers():
         if plugin.can_preview(fileobj):
             return plugin.preview(fileobj)
 
@@ -385,6 +388,17 @@ def not_found_error(error):
     return render_template(current_app.config["THEME_404_TEMPLATE"]), 404
 
 
+def draft_not_found_error(error):
+    """Handler for draft not found while published record exists."""
+    return (
+        render_template(
+            "invenio_app_rdm/records/draft_not_found.html",
+            record_id=error.pid_value,
+        ),
+        404,
+    )
+
+
 def record_tombstone_error(error):
     """Tombstone page."""
     # the RecordDeletedError will have the following properties,
@@ -411,8 +425,23 @@ def record_tombstone_error(error):
 
 
 def record_permission_denied_error(error):
-    """Handle permission denier error on record views."""
+    """Handle permission denied error on record views."""
     if not current_user.is_authenticated:
         # trigger the flask-login unauthorized handler
         return current_app.login_manager.unauthorized()
+
+    record = getattr(error, "record", None)
+
+    if record:
+        is_restricted = record.get("access", {}).get("record", None) == "restricted"
+        has_doi = "doi" in record.get("pids", {})
+        if is_restricted and has_doi:
+            return (
+                render_template(
+                    "invenio_app_rdm/records/restricted_with_doi_tombstone.html",
+                    record=record,
+                ),
+                403,
+            )
+
     return render_template(current_app.config["THEME_403_TEMPLATE"]), 403

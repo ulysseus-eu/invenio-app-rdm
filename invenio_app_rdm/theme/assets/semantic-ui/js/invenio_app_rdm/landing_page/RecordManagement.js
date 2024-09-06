@@ -1,5 +1,5 @@
 // This file is part of InvenioRDM
-// Copyright (C) 2020-2021 CERN.
+// Copyright (C) 2020-2024 CERN.
 // Copyright (C) 2020-2021 Northwestern University.
 // Copyright (C) 2021 Graz University of Technology.
 //
@@ -32,8 +32,8 @@ export class RecordManagement extends Component {
       isDraft,
       isPreviewSubmissionRequest,
       currentUserId,
-      accessLinksSearchConfig,
       recordOwnerUsername,
+      groupsEnabled,
     } = this.props;
     const { error } = this.state;
     const { id: recid } = record;
@@ -86,8 +86,8 @@ export class RecordManagement extends Component {
                 <ShareButton
                   disabled={!permissions.can_update_draft}
                   record={record}
-                  accessLinksSearchConfig={accessLinksSearchConfig}
                   permissions={permissions}
+                  groupsEnabled={groupsEnabled}
                 />
               )}
             </Grid.Column>
@@ -115,8 +115,8 @@ RecordManagement.propTypes = {
   record: PropTypes.object.isRequired,
   permissions: PropTypes.object.isRequired,
   isDraft: PropTypes.bool.isRequired,
+  groupsEnabled: PropTypes.bool.isRequired,
   isPreviewSubmissionRequest: PropTypes.bool.isRequired,
   currentUserId: PropTypes.string.isRequired,
-  recordOwnerUsername: PropTypes.string.isRequired,
-  accessLinksSearchConfig: PropTypes.object.isRequired,
+  recordOwnerUsername: PropTypes.object.isRequired,
 };

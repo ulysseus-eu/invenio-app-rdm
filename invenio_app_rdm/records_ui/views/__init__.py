@@ -10,6 +10,7 @@
 """Views related to records and deposits."""
 
 from flask import Blueprint
+from invenio_drafts_resources.resources.records.errors import DraftNotCreatedError
 from invenio_pidstore.errors import (
     PIDDeletedError,
     PIDDoesNotExistError,
@@ -19,6 +20,7 @@ from invenio_rdm_records.services.errors import RecordDeletedException
 from invenio_records_resources.services.errors import (
     FileKeyNotFoundError,
     PermissionDeniedError,
+    RecordPermissionDeniedError,
 )
 
 from ...theme.views import create_url_rule
@@ -42,6 +44,7 @@ from .filters import (
     truncate_number,
 )
 from .records import (
+    draft_not_found_error,
     not_found_error,
     record_detail,
     record_export,
@@ -157,8 +160,12 @@ def create_blueprint(app):
     blueprint.register_error_handler(PIDUnregistered, not_found_error)
     blueprint.register_error_handler(KeyError, not_found_error)
     blueprint.register_error_handler(FileKeyNotFoundError, not_found_error)
+    blueprint.register_error_handler(DraftNotCreatedError, draft_not_found_error)
     blueprint.register_error_handler(
         PermissionDeniedError, record_permission_denied_error
+    )
+    blueprint.register_error_handler(
+        RecordPermissionDeniedError, record_permission_denied_error
     )
     blueprint.register_error_handler(RecordDeletedException, record_tombstone_error)
 

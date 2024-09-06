@@ -1,5 +1,5 @@
 // This file is part of InvenioRDM
-// Copyright (C) 2020-2022 CERN.
+// Copyright (C) 2020-2024 CERN.
 // Copyright (C) 2020-2022 Northwestern University.
 // Copyright (C) 2021-2022 Graz University of Technology.
 // Copyright (C) 2022-2023 KTH Royal Institute of Technology.
@@ -43,6 +43,7 @@ import { FundingField } from "@js/invenio_vocabularies";
 import { Card, Container, Grid, Ref, Sticky } from "semantic-ui-react";
 import PropTypes from "prop-types";
 import Overridable from "react-overridable";
+import { ShareDraftButton } from "./ShareDraftButton";
 
 export class RDMDepositForm extends Component {
   constructor(props) {
@@ -97,8 +98,16 @@ export class RDMDepositForm extends Component {
   sidebarRef = createRef();
 
   render() {
-    const { record, files, permissions, preselectedCommunity, filesLocked } =
-      this.props;
+    const {
+      record,
+      files,
+      permissions,
+      preselectedCommunity,
+      filesLocked,
+      recordRestrictionGracePeriod,
+      allowRecordRestriction,
+      groupsEnabled,
+    } = this.props;
     const customFieldsUI = this.config.custom_fields.ui;
     return (
       <DepositFormApp
@@ -119,7 +128,10 @@ export class RDMDepositForm extends Component {
           />
         </Overridable>
 
-        <Overridable id="InvenioAppRdm.Deposit.CommunityHeader.container">
+        <Overridable
+          id="InvenioAppRdm.Deposit.CommunityHeader.container"
+          record={record}
+        >
           {!this.hide_community_selection && (
             <CommunityHeader
               imagePlaceholderLink="/static/images/square-placeholder.png"
@@ -150,6 +162,8 @@ export class RDMDepositForm extends Component {
                     id="InvenioAppRdm.Deposit.FileUploader.container"
                     record={record}
                     config={this.config}
+                    permissions={permissions}
+                    filesLocked={filesLocked}
                   >
                     <FileUploader
                       isDraftRecord={!record.is_published}
@@ -205,6 +219,7 @@ export class RDMDepositForm extends Component {
                             pidType={pid.scheme}
                             unmanagedHelpText={pid.unmanaged_help_text}
                             required
+                            record={record}
                           />
                         </Fragment>
                       ))}
@@ -356,6 +371,7 @@ export class RDMDepositForm extends Component {
                       fieldPath="metadata.subjects"
                       initialOptions={_get(record, "ui.subjects", null)}
                       limitToOptions={this.vocabularies.metadata.subjects.limit_to}
+                      searchOnFocus
                     />
                   </Overridable>
 
@@ -440,7 +456,7 @@ export class RDMDepositForm extends Component {
                           size: 5,
                         },
                       }}
-                      label="Awards"
+                      label="Awards/Grants"
                       labelIcon="money bill alternate outline"
                       deserializeAward={(award) => {
                         return {
@@ -461,6 +477,9 @@ export class RDMDepositForm extends Component {
                           ...(funder.title_l10n && { title: funder.title_l10n }),
                           ...(funder.pid && { pid: funder.pid }),
                           ...(funder.country && { country: funder.country }),
+                          ...(funder.country_name && {
+                            country_name: funder.country_name,
+                          }),
                           ...(funder.identifiers && {
                             identifiers: funder.identifiers,
                           }),
@@ -564,6 +583,7 @@ export class RDMDepositForm extends Component {
               {!_isEmpty(customFieldsUI) && (
                 <Overridable
                   id="InvenioAppRdm.Deposit.CustomFields.container"
+                  record={record}
                   customFieldsUI={customFieldsUI}
                 >
                   <CustomFields
@@ -588,7 +608,12 @@ export class RDMDepositForm extends Component {
                 className="deposit-sidebar"
               >
                 <Sticky context={this.sidebarRef} offset={20}>
-                  <Overridable id="InvenioAppRdm.Deposit.CardDepositStatusBox.container">
+                  <Overridable
+                    id="InvenioAppRdm.Deposit.CardDepositStatusBox.container"
+                    record={record}
+                    permissions={permissions}
+                    groupsEnabled={groupsEnabled}
+                  >
                     <Card>
                       <Card.Content>
                         <DepositStatusBox />
@@ -612,7 +637,17 @@ export class RDMDepositForm extends Component {
                           </Grid.Column>
 
                           <Grid.Column width={16} className="pt-10">
-                            <PublishButton fluid />
+                            <PublishButton fluid record={record} />
+                          </Grid.Column>
+
+                          <Grid.Column width={16} className="pt-0">
+                            {(record.is_draft === null || permissions.can_manage) && (
+                              <ShareDraftButton
+                                record={record}
+                                permissions={permissions}
+                                groupsEnabled={groupsEnabled}
+                              />
+                            )}
                           </Grid.Column>
                         </Grid>
                       </Card.Content>
@@ -621,12 +656,19 @@ export class RDMDepositForm extends Component {
                   <Overridable
                     id="InvenioAppRdm.Deposit.AccessRightField.container"
                     fieldPath="access"
+                    record={record}
+                    permissions={permissions}
+                    recordRestrictionGracePeriod={recordRestrictionGracePeriod}
+                    allowRecordRestriction={allowRecordRestriction}
                   >
                     <AccessRightField
                       label={i18next.t("Visibility")}
+                      record={record}
                       labelIcon="shield"
                       fieldPath="access"
                       showMetadataAccess={permissions?.can_manage_record_access}
+                      recordRestrictionGracePeriod={recordRestrictionGracePeriod}
+                      allowRecordRestriction={allowRecordRestriction}
                     />
                   </Overridable>
                   {permissions?.can_delete_draft && (
@@ -652,7 +694,10 @@ export class RDMDepositForm extends Component {
 }
 
 RDMDepositForm.propTypes = {
+  groupsEnabled: PropTypes.bool.isRequired,
   config: PropTypes.object.isRequired,
+  recordRestrictionGracePeriod: PropTypes.object.isRequired,
+  allowRecordRestriction: PropTypes.bool.isRequired,
   record: PropTypes.object.isRequired,
   preselectedCommunity: PropTypes.object,
   files: PropTypes.object,

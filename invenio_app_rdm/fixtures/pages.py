@@ -6,6 +6,7 @@
 # it under the terms of the MIT License; see LICENSE file for more details.
 
 """Static pages."""
+
 from pathlib import Path
 
 from flask import current_app
@@ -50,6 +51,5 @@ class StaticPages(FixtureMixin):
             "content": self.page_data(entry.get("template")),
             "description": entry.get("description"),
             "template_name": current_app.config["PAGES_DEFAULT_TEMPLATE"],
-            "has_custom_view": entry.get("has_custom_view"),
         }
         current_pages_service.create(system_identity, data)

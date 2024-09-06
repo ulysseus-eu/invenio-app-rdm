@@ -310,7 +310,10 @@ a.remove-default-style:hover {
 .preview-iframe {
   display: block;
   border-style: none;
+  width:100%;
+  height:400px;
 }
+
 
 dd {
   // Start left aligned
@@ -524,4 +527,20 @@ dl.details-list {
 
 .text-break {
   word-break: break-word
+}
+
+
+// fix for hidden tooltips
+[data-tooltip]:after {
+   z-index: 20
+}
+
+@media all and (max-width: @largestTabletScreen){
+  .right.floated.column {
+    [data-tooltip]:hover:after {
+      // fix for tooltip overflowing on the right side of mobile devices
+      // resulting in cut tooltips
+      transform: translateX(-75%) scale(1) !important;
+    }
+  }
 }

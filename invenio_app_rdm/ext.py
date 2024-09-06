@@ -7,6 +7,9 @@
 
 """Invenio Research Data Management."""
 
+import warnings
+from datetime import timedelta
+
 from flask import request, current_app
 from flask_menu import current_menu
 from invenio_i18n import lazy_gettext as _
@@ -23,6 +26,29 @@ def _is_branded_community():
 def finalize_app(app):
     """Finalize app."""
     init_menu(app)
+    init_config(app)
+
+
+def init_config(app):
+    """Initialize configuration."""
+    if "COMMUNITIES_GROUPS_ENABLED" in app.config:
+        warnings.warn(
+            "COMMUNITIES_GROUPS_ENABLED config variable is deprecated. Please use USERS_RESOURCES_GROUPS_ENABLED "
+            "instead. For now, COMMUNITIES_GROUPS_ENABLED value will be taken into account and features related to "
+            "groups will be disabled if this was the intention.",
+            DeprecationWarning,
+        )
+
+        if not app.config["COMMUNITIES_GROUPS_ENABLED"]:
+            app.config["USERS_RESOURCES_GROUPS_ENABLED"] = False
+
+    # validate grace period
+    grace_period = app.config["RDM_RECORDS_RESTRICTION_GRACE_PERIOD"]
+    if not isinstance(grace_period, timedelta) or grace_period.total_seconds() < 0:
+        raise TypeError(
+            "RDM_RECORDS_RESTRICTION_GRACE_PERIOD config value must be of type datetime.timedelta with a "
+            "duration greater than or equal to 0. "
+        )
 
 
 def init_menu(app):
@@ -45,39 +71,66 @@ def init_menu(app):
     )
 
     user_dashboard = current_menu.submenu("dashboard")
-    user_dashboard.submenu("uploads").register(
-        endpoint="invenio_app_rdm_users.uploads",
-        text=_("Uploads"),
-        order=1,
-    )
-    user_dashboard.submenu("communities").register(
-        endpoint="invenio_app_rdm_users.communities",
-        text=_("Communities"),
-        order=2,
-    )
+    # set dashboard-config to its default
+    user_dashboard_menu_config = {
+        "uploads": {
+            "endpoint": "invenio_app_rdm_users.uploads",
+            "text": _("Uploads"),
+            "order": 1,
+        },
+        "communities": {
+            "endpoint": "invenio_app_rdm_users.communities",
+            "text": _("Communities"),
+            "order": 2,
+        },
+        "requests": {
+            "endpoint": "invenio_app_rdm_users.requests",
+            "text": _("Requests"),
+            "order": 3,
+        },
+    }
     show_specific_communities = current_app.config.get("COMMUNITIES_SHOW_SPECIFIC_TYPES", False)
     if show_specific_communities:
-        user_dashboard.submenu("organizations").register(
-            "invenio_app_rdm_users.organizations",
-            text=_("Organizations"),
-            order=3,
-        )
-        user_dashboard.submenu("persons").register(
-            "invenio_app_rdm_users.persons",
-            text=_("Persons"),
-            order=4,
-        )
-    user_dashboard.submenu("requests").register(
-        endpoint="invenio_app_rdm_users.requests",
-        text=_("Requests"),
-        order=(5 if show_specific_communities else 3),
-    )
+        user_dashboard_menu_config.update(
+            {
+                "organizations": {
+                    "endpoint": "invenio_app_rdm_users.organizations",
+                    "text": _("Organizations"),
+                    "order": 3,
+                },
+                "persons": {
+                    "endpoint": "invenio_app_rdm_users.persons",
+                    "text": _("Persons"),
+                    "order": 4,
+                },
+                "requests": {
+                    "endpoint": "invenio_app_rdm_users.requests",
+                    "text": _("Requests"),
+                    "order": 5,
+                },
+            }
+        );
+
+    # apply dashboard-config overrides
+    for submenu_name, submenu_kwargs in app.config[
+        "USER_DASHBOARD_MENU_OVERRIDES"
+    ].items():
+        if submenu_name not in user_dashboard_menu_config:
+            raise ValueError(
+                f"attempting to override dashboard's submenu `{submenu_name}`, "
+                "but dashboard has no registered submenu of that name"
+            )
+        user_dashboard_menu_config[submenu_name].update(submenu_kwargs)
+
+    # register dashboard-menus
+    for submenu_name, submenu_kwargs in user_dashboard_menu_config.items():
+        user_dashboard.submenu(submenu_name).register(**submenu_kwargs)
 
     communities = current_menu.submenu("communities")
     communities.submenu("home").register(
         "invenio_app_rdm_communities.communities_home",
         text=_("Home"),
-        order=1,
+        order=5,
         visible_when=_is_branded_community,
         expected_args=["pid_value"],
         **dict(icon="home", permissions="can_read"),
@@ -85,14 +138,14 @@ def init_menu(app):
     communities.submenu("search").register(
         "invenio_app_rdm_communities.communities_detail",
         text=_("Records"),
-        order=2 if _is_branded_community else 1,
+        order=10,
         expected_args=["pid_value"],
         **dict(icon="search", permissions=True),
     )
     communities.submenu("submit").register(
         "invenio_app_rdm_communities.community_static_page",
         text=_("Submit"),
-        order=3,
+        order=15,
         visible_when=_is_branded_community,
         endpoint_arguments_constructor=lambda: {
             "pid_value": request.view_args["pid_value"],
@@ -106,7 +159,7 @@ def init_menu(app):
         persons.submenu("home").register(
             "invenio_app_rdm_communities.persons_home",
             text=_("Home"),
-            order=1,
+            order=5,
             visible_when=_is_branded_community,
             expected_args=["pid_value"],
             **dict(icon="home", permissions="can_read"),
@@ -115,14 +168,14 @@ def init_menu(app):
         persons.submenu("search").register(
             "invenio_app_rdm_communities.persons_detail",
             text=_("Records"),
-            order=2 if _is_branded_community else 1,
+            order=10,
             expected_args=["pid_value"],
             **dict(icon="search", permissions=True),
         )
         persons.submenu("submit").register(
             "invenio_app_rdm_communities.community_static_page",
             text=_("Submit"),
-            order=3,
+            order=15,
             visible_when=_is_branded_community,
             endpoint_arguments_constructor=lambda: {
                 "pid_value": request.view_args["pid_value"],
@@ -135,7 +188,7 @@ def init_menu(app):
         organizations.submenu("home").register(
             "invenio_app_rdm_communities.organizations_home",
             text=_("Home"),
-            order=1,
+            order=5,
             visible_when=_is_branded_community,
             expected_args=["pid_value"],
             **dict(icon="home", permissions="can_read"),
@@ -144,14 +197,14 @@ def init_menu(app):
         organizations.submenu("search").register(
             "invenio_app_rdm_communities.organizations_detail",
             text=_("Records"),
-            order=2 if _is_branded_community else 1,
+            order=10,
             expected_args=["pid_value"],
             **dict(icon="search", permissions=True),
         )
         organizations.submenu("submit").register(
             "invenio_app_rdm_communities.community_static_page",
             text=_("Submit"),
-            order=3,
+            order=15,
             visible_when=_is_branded_community,
             endpoint_arguments_constructor=lambda: {
                 "pid_value": request.view_args["pid_value"],
