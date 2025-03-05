@@ -311,7 +311,7 @@ a.remove-default-style:hover {
   display: block;
   border-style: none;
   width:100%;
-  height:400px;
+  height:60vh;
 }
 
 
@@ -544,3 +544,13 @@ dl.details-list {
     }
   }
 }
+
+
+.collection-header > .ui.medium.header, h4 {
+  font-weight: @bold;
+  .content {
+    vertical-align: sub;
+  }
+}
+
+

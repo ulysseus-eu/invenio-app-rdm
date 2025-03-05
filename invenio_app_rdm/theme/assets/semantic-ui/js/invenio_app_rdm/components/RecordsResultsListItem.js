@@ -6,7 +6,6 @@
 
 import { i18next } from "@translations/invenio_app_rdm/i18next";
 import _get from "lodash/get";
-import _truncate from "lodash/truncate";
 import React, { Component } from "react";
 import Overridable from "react-overridable";
 import { SearchItemCreators } from "../utils";
@@ -87,7 +86,7 @@ class RecordsResultsListItem extends Component {
             {/* FIXME: Uncomment to enable themed banner */}
             {/* <DisplayVerifiedCommunity communities={result.parent?.communities} /> */}
             <Item.Extra className="labels-actions">
-              <Label horizontal size="small" className="primary">
+              <Label horizontal size="small" className="primary theme-primary">
                 {publicationDate} ({version})
               </Label>
               <Label horizontal size="small" className="neutral">
@@ -102,15 +101,22 @@ class RecordsResultsListItem extends Component {
                 {accessStatus}
               </Label>
             </Item.Extra>
-            <Item.Header as="h2">
+            <Item.Header as="h2" className="theme-primary-text">
               <a href={viewLink}>{title}</a>
             </Item.Header>
             <Item className="creatibutors">
               <SearchItemCreators creators={creators} othersLink={viewLink} />
             </Item>
-            <Item.Description>
-              {_truncate(descriptionStripped, { length: 350 })}
-            </Item.Description>
+            <Overridable
+              id={buildUID("RecordsResultsListItem.description", "", appName)}
+              descriptionStripped={descriptionStripped}
+              result={result}
+            >
+              <Item.Description className="truncate-lines-2">
+                {descriptionStripped}
+              </Item.Description>
+            </Overridable>
+
             <Item.Extra>
               {subjects.map((subject) => (
                 <Label key={subject.title_l10n} size="tiny">
@@ -133,7 +139,7 @@ class RecordsResultsListItem extends Component {
 
                     {publishingInformation && (
                       <>
-                        {i18next.t("Published in: {{publishInfo}}", {
+                        {i18next.t("Published in: {{- publishInfo }}", {
                           publishInfo: publishingInformation,
                         })}
                       </>

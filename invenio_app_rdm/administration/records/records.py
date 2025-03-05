@@ -2,6 +2,7 @@
 #
 # Copyright (C) 2023-2024 CERN.
 # Copyright (C) 2023 Graz University of Technology.
+# Copyright (C) 2024 KTH Royal Institute of Technology.
 #
 # invenio-administration is free software; you can redistribute it and/or
 # modify it under the terms of the MIT License; see LICENSE file for more
@@ -21,10 +22,11 @@ class RecordAdminListView(AdminResourceListView):
     """Configuration for OAI-PMH sets list view."""
 
     api_endpoint = "/records"
-    name = "Records"
+    name = "records"
     resource_config = "records_resource"
     search_request_headers = {"Accept": "application/vnd.inveniordm.v1+json"}
     title = "Records"
+    menu_label = _("Records")
     category = "Records & files"
     icon = "file"
     template = "invenio_app_rdm/administration/records/records.html"
@@ -51,6 +53,11 @@ class RecordAdminListView(AdminResourceListView):
         },
         "restore": {
             "text": _("Restore record"),
+            "payload_schema": None,
+            "order": 1,
+        },
+        "compare": {
+            "text": _("Compare revisions"),
             "payload_schema": None,
             "order": 1,
         },
@@ -90,8 +97,8 @@ class RecordAdminListView(AdminResourceListView):
                 ["expand", "1"],
                 ["include_deleted", "1"],
             ],
-            page=1,
-            size=30,
+            pagination_options=(20, 50),
+            default_size=20,
         )
 
 
@@ -99,10 +106,11 @@ class DraftAdminListView(AdminResourceListView):
     """Configuration for OAI-PMH sets list view."""
 
     api_endpoint = "/user/records"
-    name = "Drafts"
+    name = "drafts"
     resource_config = "records_resource"
     search_request_headers = {"Accept": "application/vnd.inveniordm.v1+json"}
     title = "Drafts"
+    menu_label = _("Drafts")
     category = "Records & files"
     icon = "upload"
     template = "invenio_app_rdm/administration/records/drafts.html"
@@ -148,6 +156,6 @@ class DraftAdminListView(AdminResourceListView):
                 ["is_published", False],
                 ["include_deleted", "1"],
             ],
-            page=1,
-            size=30,
+            pagination_options=(20, 50),
+            default_size=20,
         )

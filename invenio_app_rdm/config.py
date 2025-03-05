@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2019-2024 CERN.
+# Copyright (C) 2019-2025 CERN.
 # Copyright (C) 2019-2020 Northwestern University.
-# Copyright (C) 2021      Graz University of Technology.
+# Copyright (C) 2021-2025 Graz University of Technology.
 # Copyright (C) 2022-2024 KTH Royal Institute of Technology.
 # Copyright (C) 2023      TU Wien
 #
@@ -65,6 +65,7 @@ from invenio_rdm_records.notifications.builders import (
     UserAccessRequestDeclineNotificationBuilder,
     UserAccessRequestSubmitNotificationBuilder,
 )
+from invenio_rdm_records.proxies import current_rdm_records_service
 from invenio_rdm_records.requests.entity_resolvers import (
     EmailResolver,
     RDMRecordServiceResultResolver,
@@ -119,6 +120,15 @@ from invenio_vocabularies.contrib.awards.datastreams import (
 from invenio_vocabularies.contrib.awards.datastreams import (
     VOCABULARIES_DATASTREAM_WRITERS as AWARDS_WRITERS,
 )
+from invenio_vocabularies.contrib.common.openaire.datastreams import (
+    VOCABULARIES_DATASTREAM_READERS as COMMON_OPENAIRE_READERS,
+)
+from invenio_vocabularies.contrib.common.openaire.datastreams import (
+    VOCABULARIES_DATASTREAM_TRANSFORMERS as COMMON_OPENAIRE_TRANSFORMERS,
+)
+from invenio_vocabularies.contrib.common.openaire.datastreams import (
+    VOCABULARIES_DATASTREAM_WRITERS as COMMON_OPENAIRE_WRITERS,
+)
 from invenio_vocabularies.contrib.common.ror.datastreams import (
     VOCABULARIES_DATASTREAM_READERS as COMMON_ROR_READERS,
 )
@@ -155,6 +165,7 @@ from invenio_vocabularies.contrib.subjects.datastreams import (
 from invenio_vocabularies.contrib.subjects.datastreams import (
     VOCABULARIES_DATASTREAM_WRITERS as SUBJECTS_WRITERS,
 )
+from werkzeug.local import LocalProxy
 
 from .theme.views import notification_settings
 from .users.schemas import NotificationsUserSchema, UserPreferencesNotificationsSchema
@@ -173,7 +184,7 @@ def _(x):
 # =====
 # See https://flask.palletsprojects.com/en/1.1.x/config/
 
-APP_ALLOWED_HOSTS = ["0.0.0.0", "localhost", "127.0.0.1"]
+TRUSTED_HOSTS = ["0.0.0.0", "localhost", "127.0.0.1"]
 """Allowed hosts.
 
 Since HAProxy and Nginx route all requests no matter the host header
@@ -241,7 +252,7 @@ APP_THEME = ["semantic-ui"]
 BASE_TEMPLATE = "invenio_app_rdm/page.html"
 """Global base template."""
 
-COVER_TEMPLATE = "invenio_theme/page_cover.html"
+COVER_TEMPLATE = "invenio_app_rdm/page_cover.html"
 """Cover page base template (used for e.g. login/sign-up)."""
 
 SETTINGS_TEMPLATE = "invenio_theme/page_settings.html"
@@ -417,6 +428,10 @@ CELERY_BEAT_SCHEDULE = {
     "accounts_ips": {
         "task": "invenio_accounts.tasks.delete_ips",
         "schedule": timedelta(hours=6),
+    },
+    "update_domain_status": {
+        "task": "invenio_accounts.tasks.update_domain_status",
+        "schedule": timedelta(hours=4),
     },
     "draft_resources": {
         "task": ("invenio_drafts_resources.services.records.tasks.cleanup_drafts"),
@@ -651,7 +666,10 @@ OAISERVER_RECORD_CLS = "invenio_rdm_records.records.api:RDMRecord"
 OAISERVER_RECORD_SETS_FETCHER = "invenio_oaiserver.percolator:find_sets_for_record"
 """Record's OAI sets function."""
 
-OAISERVER_RECORD_INDEX = "rdmrecords-records"
+OAISERVER_RECORD_INDEX = LocalProxy(
+    lambda: current_rdm_records_service.record_cls.index._name
+)
+
 """Specify a search index with records that should be exposed via OAI-PMH."""
 
 OAISERVER_GETRECORD_FETCHER = "invenio_rdm_records.oai:getrecord_fetcher"
@@ -690,25 +708,12 @@ ACCESS_CACHE = "invenio_cache:current_cache"
 SEARCH_HOSTS = [{"host": "localhost", "port": 9200}]
 """Search hosts."""
 
-# Invenio-Indexer
-# ===============
-# See https://invenio-indexer.readthedocs.io/en/latest/configuration.html
-
-INDEXER_DEFAULT_INDEX = "rdmrecords-records-record-v7.0.0"
-"""Default index to use if no schema is defined."""
-
 # Invenio-Base
 # ============
 # See https://invenio-base.readthedocs.io/en/latest/api.html#invenio_base.wsgi.wsgi_proxyfix  # noqa
 
 WSGI_PROXIES = 2
 """Correct number of proxies in front of your application."""
-
-# Invenio-Admin
-# =============
-
-# Admin interface is deprecated and should not be used.
-ADMIN_PERMISSION_FACTORY = "invenio_app_rdm.admin.permission_factory"
 
 # Invenio-REST
 # ============
@@ -721,6 +726,7 @@ REST_CSRF_ENABLED = True
 VOCABULARIES_DATASTREAM_READERS = {
     **VOCABULARIES_DATASTREAM_READERS,
     **NAMES_READERS,
+    **COMMON_OPENAIRE_READERS,
     **COMMON_ROR_READERS,
     **AWARDS_READERS,
     **FUNDERS_READERS,
@@ -732,6 +738,7 @@ VOCABULARIES_DATASTREAM_READERS = {
 VOCABULARIES_DATASTREAM_TRANSFORMERS = {
     **VOCABULARIES_DATASTREAM_TRANSFORMERS,
     **NAMES_TRANSFORMERS,
+    **COMMON_OPENAIRE_TRANSFORMERS,
     **COMMON_ROR_TRANSFORMERS,
     **AWARDS_TRANSFORMERS,
     **FUNDERS_TRANSFORMERS,
@@ -746,6 +753,7 @@ VOCABULARIES_DATASTREAM_WRITERS = {
     **FUNDERS_WRITERS,
     **AWARDS_WRITERS,
     **AFFILIATIONS_WRITERS,
+    **COMMON_OPENAIRE_WRITERS,
     **COMMON_ROR_WRITERS,
     **SUBJECTS_WRITERS,
 }
@@ -990,6 +998,25 @@ APP_RDM_FILES_INTEGRITY_REPORT_SUBJECT = "Files integrity report"
 APP_RDM_ADMIN_EMAIL_RECIPIENT = "info@inveniosoftware.org"
 """Admin e-mail"""
 
+APP_RDM_IDENTIFIER_SCHEMES_UI = {
+    "orcid": {
+        "url_prefix": "http://orcid.org/",
+        "icon": "images/orcid.svg",
+        "label": "ORCID",
+    },
+    "ror": {
+        "url_prefix": "https://ror.org/",
+        "icon": "images/ror-icon.svg",
+        "label": "ROR",
+    },
+    "gnd": {
+        "url_prefix": "http://d-nb.info/gnd/",
+        "icon": "images/gnd-icon.svg",
+        "label": "GND",
+    },
+}
+"""Identifier Schemes UI config"""
+
 # Invenio-Communities
 # ===================
 
@@ -1011,6 +1038,9 @@ COMMUNITIES_RECORDS_SEARCH = {
 }
 """Community requests search configuration (i.e list of community requests)"""
 
+COMMUNITIES_SHOW_BROWSE_MENU_ENTRY = False
+"""Toggle to show or hide the 'Browse' menu entry for communities."""
+
 # Invenio-RDM-Records
 # ===================
 
@@ -1023,7 +1053,9 @@ RDM_REQUESTS_ROUTES = {
 RDM_COMMUNITIES_ROUTES = {
     "community-detail": "/communities/<pid_value>/records",
     "community-home": "/communities/<pid_value>/",
+    "community-browse": "/communities/<pid_value>/browse",
     "community-static-page": "/communities/<pid_value>/pages/<path:page_slug>",
+    "community-collection": "/communities/<pid_value>/collections/<tree_slug>/<collection_slug>",
     "person-detail": "/persons/<pid_value>/records",
     "person-home": "/persons/<pid_value>/",
     "organization-detail": "/organizations/<pid_value>/records",
@@ -1344,6 +1376,8 @@ NOTIFICATIONS_BUILDERS = {
     GrantUserAccessNotificationBuilder.type: GrantUserAccessNotificationBuilder,
     # Comment request event
     CommentRequestEventCreateNotificationBuilder.type: CommentRequestEventCreateNotificationBuilder,
+    community_notifications.SubComReqCommentNotificationBuilder.type: community_notifications.SubComReqCommentNotificationBuilder,
+    community_notifications.SubComInvCommentNotificationBuilder.type: community_notifications.SubComInvCommentNotificationBuilder,
     # Community inclusion
     CommunityInclusionAcceptNotificationBuilder.type: CommunityInclusionAcceptNotificationBuilder,
     CommunityInclusionCancelNotificationBuilder.type: CommunityInclusionCancelNotificationBuilder,
@@ -1360,6 +1394,11 @@ NOTIFICATIONS_BUILDERS = {
     community_notifications.SubCommunityCreate.type: community_notifications.SubCommunityCreate,
     community_notifications.SubCommunityAccept.type: community_notifications.SubCommunityAccept,
     community_notifications.SubCommunityDecline.type: community_notifications.SubCommunityDecline,
+    # Subcommunity invitation request
+    community_notifications.SubComInvitationCreate.type: community_notifications.SubComInvitationCreate,
+    community_notifications.SubComInvitationAccept.type: community_notifications.SubComInvitationAccept,
+    community_notifications.SubComInvitationDecline.type: community_notifications.SubComInvitationDecline,
+    community_notifications.SubComInvitationExpire.type: community_notifications.SubComInvitationExpire,
 }
 """Notification builders."""
 
@@ -1371,6 +1410,7 @@ NOTIFICATIONS_ENTITY_RESOLVERS = [
     ServiceResultResolver(service_id="communities", type_key="community"),
     ServiceResultResolver(service_id="requests", type_key="request"),
     ServiceResultResolver(service_id="request_events", type_key="request_event"),
+    ServiceResultResolver(service_id="groups", type_key="group"),
 ]
 """List of entity resolvers used by notification builders."""
 
@@ -1417,6 +1457,21 @@ GITHUB_RELEASE_CLASS = RDMGithubRelease
 # Flask-Menu
 # ==========
 #
-
 USER_DASHBOARD_MENU_OVERRIDES = {}
 """Overrides for "dashboard" menu."""
+
+
+# Invenio-Administration
+# ======================
+#
+from invenio_app_rdm import __version__
+
+ADMINISTRATION_DISPLAY_VERSIONS = [("invenio-app-rdm", f"v{__version__}")]
+"""Show the InvenioRDM version in the administration panel."""
+
+ADMINISTRATION_THEME_BASE_TEMPLATE = "invenio_app_rdm/administration_page.html"
+"""Administration base template."""
+
+
+APP_RDM_SUBCOMMUNITIES_LABEL = "Subcommunities"
+"""Label for the subcommunities in the community browse page."""

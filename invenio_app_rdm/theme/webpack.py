@@ -28,6 +28,7 @@ theme = WebpackThemeBundle(
                 "invenio-app-rdm-user-communities": "./js/invenio_app_rdm/user_dashboard/communities.js",
                 "invenio-app-rdm-user-requests": "./js/invenio_app_rdm/user_dashboard/requests.js",
                 "invenio-app-rdm-community-records-search": "./js/invenio_app_rdm/communityRecordsSearch/index.js",
+                "invenio-app-rdm-collections-search": "./js/invenio_app_rdm/collectionRecordsSearch/index.js",
                 "base-theme-rdm": "./js/invenio_app_rdm/theme.js",
                 "iiif-simple-previewer": "./less/invenio_app_rdm/previewer/iiif_simple.less",
                 "invenio-app-rdm-frontpage": "./js/invenio_app_rdm/frontpage/index.js",
@@ -37,6 +38,7 @@ theme = WebpackThemeBundle(
                 "invenio-records-administration": "./js/invenio_app_rdm/administration/records/index.js",
                 "invenio-drafts-administration": "./js/invenio_app_rdm/administration/drafts/index.js",
                 "invenio-domains-administration": "./js/invenio_app_rdm/administration/domains/index.js",
+                "invenio-communities-browse": "./js/invenio_app_rdm/subcommunity/browse.js",
             },
             dependencies={
                 "@babel/runtime": "^7.9.0",
@@ -54,8 +56,9 @@ theme = WebpackThemeBundle(
                 "react-dropzone": "^11.0.0",
                 "react-i18next": "^11.11.0",
                 "react-invenio-forms": "^4.0.0",
-                "react-searchkit": "^2.0.0",
+                "react-searchkit": "^3.0.0",
                 "yup": "^0.32.0",
+                "json-diff-kit": "^1.0.30",
             },
             aliases={
                 # Define Semantic-UI theme configuration needed by
@@ -70,6 +73,26 @@ theme = WebpackThemeBundle(
                 "@js/invenio_app_rdm": "js/invenio_app_rdm",
                 "@translations/invenio_app_rdm": "translations/invenio_app_rdm",
             },
+            copy=[
+                # Copy some assets into "static/dist", as TinyMCE requires that
+                # Note that the base path for all entries is the `config.json` directory
+                {
+                    "from": "../node_modules/tinymce/skins/content/default/content.css",
+                    "to": "../../static/dist/js/skins/content/default",
+                },
+                {
+                    "from": "../node_modules/tinymce/skins/ui/oxide/skin.min.css",
+                    "to": "../../static/dist/js/skins/ui/oxide",
+                },
+                {
+                    "from": "../node_modules/tinymce/skins/ui/oxide/content.min.css",
+                    "to": "../../static/dist/js/skins/ui/oxide",
+                },
+                {
+                    "from": "../node_modules/json-diff-kit/dist/viewer.css",
+                    "to": "../../static/css/json-diff-kit.css",
+                },
+            ],
         ),
     },
 )

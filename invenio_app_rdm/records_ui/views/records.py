@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2019-2024 CERN.
+# Copyright (C) 2019-2025 CERN.
 # Copyright (C) 2019-2021 Northwestern University.
 # Copyright (C) 2021-2023 TU Wien.
 #
@@ -39,7 +39,9 @@ from invenio_app_rdm.records_ui.previewer.iiif_simple import (
 
 from ..utils import get_external_resources
 from .decorators import (
-    add_signposting,
+    add_signposting_content_resources,
+    add_signposting_landing_page,
+    add_signposting_metadata_resources,
     pass_file_item,
     pass_file_metadata,
     pass_include_deleted,
@@ -141,7 +143,7 @@ class PreviewFile:
 @pass_record_or_draft(expand=True)
 @pass_record_files
 @pass_record_media_files
-@add_signposting
+@add_signposting_landing_page
 def record_detail(
     pid_value, record, files, media_files, is_preview=False, include_deleted=False
 ):
@@ -178,7 +180,7 @@ def record_detail(
             )
         except ValidationError:
             abort(404)
-        # inject parent doi format for new drafts so we can show in preview
+        # inject parent doi format for new drafts so we can show in preview if parent doi is required
         if current_app.config["DATACITE_ENABLED"]:
             service = current_rdm_records.records_service
             datacite_provider = [
@@ -187,11 +189,27 @@ def record_detail(
                 if p == "doi" and "datacite" in v
             ]
             if datacite_provider:
-                datacite_provider = datacite_provider[0]
-                parent_doi = datacite_provider.client.generate_doi(
-                    record._record.parent
+                should_mint_parent_doi = True
+                is_doi_required = (
+                    current_app.config.get("RDM_PARENT_PERSISTENT_IDENTIFIERS", {})
+                    .get("doi", {})
+                    .get("required")
                 )
-                record_ui["ui"]["new_draft_parent_doi"] = parent_doi
+                if not is_doi_required:
+                    # check if the draft has a reserved doi and mint parent doi only in that case
+                    record_doi = record._record.pids.get("doi", {})
+                    is_doi_reserved = record_doi.get(
+                        "provider", ""
+                    ) == "datacite" and record_doi.get("identifier")
+                    if not is_doi_reserved:
+                        should_mint_parent_doi = False
+
+                if should_mint_parent_doi:
+                    datacite_provider = datacite_provider[0]
+                    parent_doi = datacite_provider.client.generate_doi(
+                        record._record.parent
+                    )
+                    record_ui["ui"]["new_draft_parent_doi"] = parent_doi
 
     # emit a record view stats event
     emitter = current_stats.get_event_emitter("record-view")
@@ -239,14 +257,15 @@ def record_detail(
         community=resolved_community,
         external_resources=get_external_resources(record),
         user_avatar=avatar,
-        record_owner_username=(
-            record_owner.get("username")
+        record_owner_id=(
+            record_owner.get("id")
         ),  # record created with system_identity have not owners e.g demo
     )
 
 
 @pass_is_preview
 @pass_record_or_draft(expand=False)
+@add_signposting_metadata_resources
 def record_export(
     pid_value, record, export_format=None, permissions=None, is_preview=False
 ):
@@ -309,7 +328,7 @@ def record_file_preview(
 
 @pass_is_preview
 @pass_file_item(is_media=False)
-@add_signposting
+@add_signposting_content_resources
 def record_file_download(pid_value, file_item=None, is_preview=False, **kwargs):
     """Download a file from a record."""
     download = bool(request.args.get("download"))
