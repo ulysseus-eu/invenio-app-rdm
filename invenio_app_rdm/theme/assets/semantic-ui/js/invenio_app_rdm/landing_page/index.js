@@ -15,7 +15,6 @@ import { RecordCitationField } from "./RecordCitationField";
 import { ExportDropdown } from "./ExportDropdown";
 import { CommunitiesManagement } from "./CommunitiesManagement";
 import Overridable, { OverridableContext, overrideStore } from "react-overridable";
-import { OverridableContext, overrideStore } from "react-overridable";
 import { CommunityType } from "@js/invenio_communities";
 
 const recordManagementAppDiv = document.getElementById("recordManagement");
