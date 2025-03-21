@@ -173,7 +173,8 @@ RDMEmptyResults.propTypes = {
 
 const appName = "InvenioAppRdm.DashboardUploads";
 
-export const DashboardUploadsSearchLayout = parametrize(DashboardSearchLayoutHOC, {
+export const DashboardUploadsSearchLayout = DashboardSearchLayoutHOC({
+  searchBarPlaceholder: i18next.t("Search in my uploads..."),
   newBtn: (
     <Button
       positive
@@ -185,7 +186,6 @@ export const DashboardUploadsSearchLayout = parametrize(DashboardSearchLayoutHOC
   ),
   appName: appName,
 });
-
 
 const ContribSearchAppFacetsWithConfig = parametrize(ContribSearchAppFacets, {
   toggle: true,

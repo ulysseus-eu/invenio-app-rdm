@@ -16,7 +16,7 @@ import { i18next } from "@translations/invenio_app_rdm/i18next";
 import React from "react";
 import { ResultsList, SearchBar, Sort, buildUID } from "react-searchkit";
 import { GridResponsiveSidebarColumn } from "react-invenio-forms";
-import {Button, Container, Grid} from "semantic-ui-react";
+import { Grid, Button } from "semantic-ui-react";
 import PropTypes from "prop-types";
 import Overridable from "react-overridable";
 
