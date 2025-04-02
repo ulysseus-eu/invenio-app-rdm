@@ -158,12 +158,17 @@ def execute_upgrade():
 
     # Migrating records and drafts
     errors = []
+    record_idx = 0
     for record_metadata in RDMRecord.model_cls.query.all():
+        record_idx += 1
         record = RDMRecord(record_metadata.data, model=record_metadata)
         error = update_record(record)
 
         if error:
             errors.append(error)
+            db.session.rollback()
+        else:
+            db.session.commit()
 
     for draft_metadata in RDMDraft.model_cls.query.all():
         draft = RDMDraft(draft_metadata.data, model=draft_metadata)
@@ -174,30 +179,20 @@ def execute_upgrade():
     success = not errors
 
     if success:
-        secho("Commiting to DB", nl=True)
-        db.session.commit()
         secho(
             "Data migration completed, please rebuild the search indices now.",
             fg="green",
         )
 
     else:
-        secho("Rollback", nl=True)
-        db.session.rollback()
         secho(
-            "Upgrade aborted due to the following errors:",
+            "Upgrade had few the following errors:",
             fg="red",
             err=True,
         )
 
         for error in errors:
             secho(error, fg="red", err=True)
-
-        msg = (
-            "The changes have been rolled back. "
-            "Please fix the above listed errors and try the upgrade again",
-        )
-        secho(msg, fg="yellow", err=True)
 
         sys.exit(1)
 
