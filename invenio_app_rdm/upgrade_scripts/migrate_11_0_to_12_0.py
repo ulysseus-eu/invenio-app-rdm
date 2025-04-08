@@ -51,93 +51,96 @@ from invenio_rdm_records.proxies import current_rdm_records
 from invenio_rdm_records.records.api import RDMDraft, RDMRecord
 
 
+def migrate_review_policy(community_record):
+    if community_record.is_deleted:
+        return
+
+    community_record["access"].setdefault(
+        "review_policy", ReviewPolicyEnum.CLOSED.value
+    )
+
+
+def update_parent(record):
+    """Update parent schema and parent communities for older records."""
+    new_parent_schema = "local://records/parent-v3.0.0.json"
+    record.parent["$schema"] = new_parent_schema
+
+    if (
+        isinstance(record.parent["access"]["owned_by"], list)
+        and len(record.parent["access"]["owned_by"]) > 0
+    ):
+        record.parent.access.owned_by = {
+            "user": record.parent["access"]["owned_by"][0]["user"]
+        }
+
+    if "pids" not in record.parent:
+        record.parent["pids"] = {}
+
+        if (
+            current_app.config["DATACITE_ENABLED"]
+            and "doi" in current_app.config["RDM_PARENT_PERSISTENT_IDENTIFIERS"]
+            and current_app.config["RDM_PARENT_PERSISTENT_IDENTIFIERS"]["doi"][
+            "is_enabled"
+        ]
+        ):
+            pids = current_rdm_records.records_service.pids.parent_pid_manager.create_all(
+                record.parent, pids={}, schemes={"doi"}
+            )
+            current_rdm_records.records_service.pids.parent_pid_manager.reserve_all(
+                record.parent, pids
+            )
+            record.parent["pids"] = pids
+            # Have to commit here otherwise register_or_update won't get
+            # the above data
+            record.parent.commit()
+
+            if isinstance(record, RDMRecord):
+                current_rdm_records.records_service.pids.register_or_update(
+                    id_=record["id"],
+                    identity=system_identity,
+                    scheme="doi",
+                    parent=True,
+                )
+    # Catch all commit for the parent
+    record.parent.commit()
+
+
+def update_record(record):
+    # skipping deleted records because can't be committed
+    if record.is_deleted:
+        return
+
+    try:
+        secho(f"Updating record : {record.pid.pid_value}", fg="yellow")
+
+        # otherwise the save would not work, due to new attributes
+        # (media_files, parent_doi) used
+        record["$schema"] = "local://records/record-v6.0.0.json"
+
+        # Initialize media files as disabled if not any
+        record.setdefault("media_files", {"enabled": False})
+        if record.media_files.bucket is None:
+            record.media_files.create_bucket()
+
+        update_parent(record)
+
+        record.commit()
+
+        secho(f"> Updated parent: {record.parent.pid.pid_value}", fg="green")
+        secho(f"> Updated record: {record.pid.pid_value}\n", fg="green")
+        return None
+    except Exception as e:
+        secho(f"> Error {repr(e)}", fg="red")
+        error = f"Record {record.pid.pid_value} failed to update"
+        return error
+
+
 def execute_upgrade():
     """Execute the upgrade from InvenioRDM 11.0 to 12.0.0.
 
     Please read the disclaimer on this module before thinking about executing
     this function!
     """
-
-    def migrate_review_policy(community_record):
-        if community_record.is_deleted:
-            return
-
-        community_record["access"].setdefault(
-            "review_policy", ReviewPolicyEnum.CLOSED.value
-        )
-
-    def update_parent(record):
-        """Update parent schema and parent communities for older records."""
-        new_parent_schema = "local://records/parent-v3.0.0.json"
-        record.parent["$schema"] = new_parent_schema
-
-        if (
-            isinstance(record.parent["access"]["owned_by"], list)
-            and len(record.parent["access"]["owned_by"]) > 0
-        ):
-            record.parent.access.owned_by = {
-                "user": record.parent["access"]["owned_by"][0]["user"]
-            }
-
-        if "pids" not in record.parent:
-            record.parent["pids"] = {}
-
-            if (
-                current_app.config["DATACITE_ENABLED"]
-                and "doi" in current_app.config["RDM_PARENT_PERSISTENT_IDENTIFIERS"]
-                and current_app.config["RDM_PARENT_PERSISTENT_IDENTIFIERS"]["doi"][
-                    "is_enabled"
-                ]
-            ):
-                pids = current_rdm_records.records_service.pids.parent_pid_manager.create_all(
-                    record.parent, pids={}, schemes={"doi"}
-                )
-                current_rdm_records.records_service.pids.parent_pid_manager.reserve_all(
-                    record.parent, pids
-                )
-                record.parent["pids"] = pids
-                # Have to commit here otherwise register_or_update won't get
-                # the above data
-                record.parent.commit()
-
-                if isinstance(record, RDMRecord):
-                    current_rdm_records.records_service.pids.register_or_update(
-                        id_=record["id"],
-                        identity=system_identity,
-                        scheme="doi",
-                        parent=True,
-                    )
-        # Catch all commit for the parent
-        record.parent.commit()
-
-    def update_record(record):
-        # skipping deleted records because can't be committed
-        if record.is_deleted:
-            return
-
-        try:
-            secho(f"Updating record : {record.pid.pid_value}", fg="yellow")
-
-            # otherwise the save would not work, due to new attributes
-            # (media_files, parent_doi) used
-            record["$schema"] = "local://records/record-v6.0.0.json"
-
-            # Initialize media files as disabled if not any
-            record.setdefault("media_files", {"enabled": False})
-            if record.media_files.bucket is None:
-                record.media_files.create_bucket()
-
-            update_parent(record)
-
-            record.commit()
-
-            secho(f"> Updated parent: {record.parent.pid.pid_value}", fg="green")
-            secho(f"> Updated record: {record.pid.pid_value}\n", fg="green")
-            return None
-        except Exception as e:
-            secho(f"> Error {repr(e)}", fg="red")
-            error = f"Record {record.pid.pid_value} failed to update"
-            return error
 
     secho("Starting data migration...", fg="green")
 
@@ -158,48 +161,51 @@ def execute_upgrade():
 
     # Migrating records and drafts
     errors = []
-    for record_metadata in RDMRecord.model_cls.query.all():
-        record = RDMRecord(record_metadata.data, model=record_metadata)
-        error = update_record(record)
+    for page in range(RDMRecord.model_cls.query.count()//100):
+        page_errors = []
+        for record_metadata in RDMRecord.model_cls.query.offset(100*page).limit(100):
+            record = RDMRecord(record_metadata.data, model=record_metadata)
+            error = update_record(record)
+            if error:
+                errors.append(error)
+                page_errors.append(record.id)
+        if len(page_errors) > 0:
+            db.session.rollback()
+            for record_metadata in RDMRecord.model_cls.query.offset(100*page).limit(100).filter_by(id.not_in(page_errors)):
+                record = RDMRecord(record_metadata.data, model=record_metadata)
+                update_record(record)
+        db.session.commit()
 
-        if error:
-            errors.append(error)
-
-    for draft_metadata in RDMDraft.model_cls.query.all():
-        draft = RDMDraft(draft_metadata.data, model=draft_metadata)
-        error = update_record(draft)
-        if error:
-            errors.append(error)
+    for page in range(RDMDraft.model_cls.query.count()//100):
+        page_errors = []
+        for draft_metadata in RDMDraft.model_cls.query.offset(100*page).limit(100):
+            draft = RDMDraft(draft_metadata.data, model=draft_metadata)
+            error = update_record(draft)
+            if error:
+                errors.append(error)
+                page_errors.append(record.id)
+        if len(page_errors) > 0:
+            db.session.rollback()
+            for draft_metadata in RDMDraft.model_cls.query.offset(100*page).limit(100).filter_by(id.not_in(page_errors)):
+                draft = RDMDraft(draft_metadata.data, model=draft_metadata)
+                update_record(draft)
+        db.session.commit()
 
     success = not errors
 
     if success:
-        secho("Commiting to DB", nl=True)
-        db.session.commit()
         secho(
-            "Data migration completed, please rebuild the search indices now.",
+            "Data migration completed without errors.",
             fg="green",
         )
-
     else:
-        secho("Rollback", nl=True)
-        db.session.rollback()
         secho(
-            "Upgrade aborted due to the following errors:",
-            fg="red",
+            "Data migration completed with the following errors:",
+            fg="orange",
             err=True,
         )
-
         for error in errors:
-            secho(error, fg="red", err=True)
-
-        msg = (
-            "The changes have been rolled back. "
-            "Please fix the above listed errors and try the upgrade again",
-        )
-        secho(msg, fg="yellow", err=True)
-
-        sys.exit(1)
+            secho(error, fg="orange", err=True)
 
 
 # if the script is executed on its own, perform the upgrade
