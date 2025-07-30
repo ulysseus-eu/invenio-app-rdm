@@ -16,6 +16,7 @@ import { CreateAccessLink } from "./CreateAccessLink";
 import { LinksSearchItem } from "./LinksSearchItem";
 import { dropdownOptionsGenerator } from "react-invenio-forms";
 import _cloneDeep from "lodash/cloneDeep";
+import { capitalizeFirstLetter } from "../../../utils";
 
 export const dropdownOptions = [
   {
@@ -87,8 +88,7 @@ export class LinksSearchResultContainer extends Component {
           listOfErrors.map((element) => (
             <Message.Item key={element.field}>
               <b>
-                {element.field.charAt(0).toUpperCase() +
-                  element.field.slice(1).replace("_", " ")}
+                {capitalizeFirstLetter(element.field).replace("_", " ")}
               </b>
               : {this.renderErrorMessages(element.messages)}
             </Message.Item>

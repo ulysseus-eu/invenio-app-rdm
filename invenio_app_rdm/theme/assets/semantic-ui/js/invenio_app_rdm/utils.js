@@ -118,3 +118,15 @@ export function SearchItemCreators({ creators, className, othersLink }) {
  */
 export const timestampToRelativeTime = (timestamp) =>
   DateTime.fromISO(timestamp).setLocale(i18next.language).toRelative();
+
+/**
+ * Capitalize first letter of string
+ */
+export function capitalizeFirstLetter(iString) {
+  if (iString?.length > 1) {
+    return iString.charAt(0).toUpperCase() + iString.slice(1).toLowerCase();
+  }
+  else {
+    return iString? iString.toUpperCase(): "";
+  }
+}
