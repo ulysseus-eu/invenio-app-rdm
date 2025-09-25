@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2019-2025 CERN.
-# Copyright (C) 2019-2021 Northwestern University.
+# Copyright (C) 2019-2025 Northwestern University.
 # Copyright (C)      2021 TU Wien.
 #
 # Invenio App RDM is free software; you can redistribute it and/or modify it
@@ -13,6 +13,7 @@ from functools import wraps
 
 from flask import current_app, g, make_response, redirect, request, session, url_for
 from flask_login import login_required
+from invenio_base import invenio_url_for
 from invenio_communities.communities.resources.serializer import (
     UICommunityJSONSerializer,
 )
@@ -22,10 +23,9 @@ from invenio_rdm_records.proxies import current_rdm_records
 from invenio_rdm_records.resources.serializers.signposting import (
     FAIRSignpostingProfileLvl1Serializer,
 )
+from invenio_rdm_records.services.errors import RecordDeletedException
 from invenio_records_resources.services.errors import PermissionDeniedError
 from sqlalchemy.orm.exc import NoResultFound
-
-from invenio_app_rdm.urls import record_url_for
 
 
 def service():
@@ -225,16 +225,28 @@ def pass_file_item(is_media=False):
             )
             record_service = media_files_service if is_media else files_service
 
-            if is_preview:
-                try:
-                    item = draft_service().get_file_content(**read_kwargs)
-                except NoResultFound:
+            try:
+                if is_preview:
+                    try:
+                        item = draft_service().get_file_content(**read_kwargs)
+                    except NoResultFound:
+                        item = record_service().get_file_content(**read_kwargs)
+                else:
                     item = record_service().get_file_content(**read_kwargs)
-            else:
-                item = record_service().get_file_content(**read_kwargs)
 
-            kwargs["file_item"] = item
-            return f(**kwargs)
+                kwargs["file_item"] = item
+                return f(**kwargs)
+
+            except RecordDeletedException:
+                # Redirect to the record page which has proper tombstone handling
+                return redirect(
+                    url_for(
+                        "invenio_app_rdm_records.record_detail",
+                        pid_value=pid_value,
+                    ),
+                    # Use 302 (temporary) instead of 301 since records can be restored
+                    code=302,
+                )
 
         return view
 
@@ -359,7 +371,8 @@ def pass_draft_community(f):
         comid = request.args.get("community")
         if comid:
             community = current_communities.service.read(id_=comid, identity=g.identity)
-            kwargs["community"] = UICommunityJSONSerializer().dump_obj(
+            kwargs["community"] = community
+            kwargs["community_ui"] = UICommunityJSONSerializer().dump_obj(
                 community.to_dict()
             )
 
@@ -376,17 +389,21 @@ def _get_header(rel, value, link_type=None):
 
 
 def _get_signposting_collection(pid_value):
-    ui_url = record_url_for(pid_value=pid_value)
+    ui_url = invenio_url_for(
+        "invenio_app_rdm_records.record_detail", pid_value=pid_value
+    )
     return _get_header("collection", ui_url, "text/html")
 
 
 def _get_signposting_describes(pid_value):
-    ui_url = record_url_for(pid_value=pid_value)
+    ui_url = invenio_url_for(
+        "invenio_app_rdm_records.record_detail", pid_value=pid_value
+    )
     return _get_header("describes", ui_url, "text/html")
 
 
 def _get_signposting_linkset(pid_value):
-    api_url = record_url_for(_app="api", pid_value=pid_value)
+    api_url = invenio_url_for("records.read", pid_value=pid_value)
     return _get_header("linkset", api_url, "application/linkset+json")
 
 
@@ -398,13 +415,25 @@ def add_signposting_landing_page(f):
         response = make_response(f(*args, **kwargs))
 
         # Relies on other decorators having operated before it
-        record = kwargs["record"]
+        if current_app.config[
+            "APP_RDM_RECORD_LANDING_PAGE_FAIR_SIGNPOSTING_LEVEL_1_ENABLED"
+        ]:
+            record = kwargs["record"]
 
-        signposting_headers = FAIRSignpostingProfileLvl1Serializer().serialize_object(
-            record.to_dict()
-        )
+            signposting_headers = (
+                FAIRSignpostingProfileLvl1Serializer().serialize_object(
+                    record.to_dict()
+                )
+            )
 
-        response.headers["Link"] = signposting_headers
+            response.headers["Link"] = signposting_headers
+        else:
+            pid_value = kwargs["pid_value"]
+            signposting_link = invenio_url_for("records.read", pid_value=pid_value)
+
+            response.headers["Link"] = (
+                f'<{signposting_link}> ; rel="linkset" ; type="application/linkset+json"'  # fmt: skip
+            )
 
         return response
 

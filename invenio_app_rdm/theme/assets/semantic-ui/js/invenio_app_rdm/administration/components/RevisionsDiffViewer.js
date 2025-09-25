@@ -1,6 +1,7 @@
 /*
  * // This file is part of Invenio-App-Rdm
  * // Copyright (C) 2025 CERN.
+ * // Copyright (C) 2025 Graz University of Technology.
  * //
  * // Invenio-App-Rdm is free software; you can redistribute it and/or modify it
  * // under the terms of the MIT License; see LICENSE file for more details.
@@ -23,20 +24,6 @@ export class RevisionsDiffViewer extends Component {
       ignoreCaseForKey: false,
       recursiveEqual: true,
     });
-
-    this.viewerProps = {
-      indent: 4,
-      lineNumbers: true,
-      highlightInlineDiff: true,
-      inlineDiffOptions: {
-        mode: "word",
-        wordSeparator: " ",
-      },
-      hideUnchangedLines: true,
-      syntaxHighlight: false,
-      virtual: true,
-    };
-
     this.state = {
       currentDiff: undefined,
     };
@@ -57,13 +44,13 @@ export class RevisionsDiffViewer extends Component {
   };
 
   render() {
-    const { currentDiff } = this.state;
+    const { currentDiff, viewerProps } = this.state;
 
     return currentDiff ? (
       <Grid>
         <Grid.Column width={16}>
           <Container fluid>
-            <Viewer diff={currentDiff} {...this.viewerProps} />
+            <Viewer diff={currentDiff} {...viewerProps} />
           </Container>
         </Grid.Column>
       </Grid>
@@ -73,5 +60,21 @@ export class RevisionsDiffViewer extends Component {
 
 RevisionsDiffViewer.propTypes = {
   diff: PropTypes.object,
-  viewerProps: PropTypes.object.isRequired,
+  viewerProps: PropTypes.object,
+};
+
+RevisionsDiffViewer.defaultProps = {
+  diff: {},
+  viewerProps: {
+    indent: 4,
+    lineNumbers: true,
+    highlightInlineDiff: true,
+    inlineDiffOptions: {
+      mode: "word",
+      wordSeparator: " ",
+    },
+    hideUnchangedLines: true,
+    syntaxHighlight: false,
+    virtual: true,
+  },
 };

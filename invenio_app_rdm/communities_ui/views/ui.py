@@ -9,24 +9,21 @@
 # under the terms of the MIT License; see LICENSE file for more details.
 """Communities UI blueprints module."""
 
-from flask import Blueprint, current_app, render_template, request
-from flask_login import current_user
-from invenio_communities.communities.resources.serializer import (
-    UICommunityJSONSerializer,
-)
+from flask import Blueprint, current_app, request
+from invenio_collections.searchapp import search_app_context as c_search_app_context
 from invenio_communities.errors import CommunityDeletedError
 from invenio_communities.views.ui import (
     not_found_error,
     record_permission_denied_error,
     record_tombstone_error,
 )
-from invenio_i18n import lazy_gettext as _
 from invenio_pidstore.errors import PIDDeletedError, PIDDoesNotExistError
-from invenio_rdm_records.collections import search_app_context as c_search_app_context
 from invenio_records_resources.services.errors import (
     PermissionDeniedError,
     RecordPermissionDeniedError,
 )
+
+from invenio_app_rdm.views import create_url_rule
 
 from ..searchapp import search_app_context
 from .communities import (
@@ -58,29 +55,24 @@ def create_ui_blueprint(app):
     )
 
     blueprint.add_url_rule(
-        routes["community-detail"],
-        view_func=communities_detail,
+        **create_url_rule(routes["community-detail"], communities_detail),
         strict_slashes=False,
     )
 
     blueprint.add_url_rule(
-        routes["community-home"],
-        view_func=communities_home,
+        **create_url_rule(routes["community-home"], communities_home)
     )
 
     blueprint.add_url_rule(
-        routes["community-browse"],
-        view_func=communities_browse,
+        **create_url_rule(routes["community-browse"], communities_browse)
     )
 
     blueprint.add_url_rule(
-        routes["community-static-page"],
-        view_func=community_static_page,
+        **create_url_rule(routes["community-static-page"], community_static_page)
     )
 
     blueprint.add_url_rule(
-        routes["community-collection"],
-        view_func=community_collection,
+        **create_url_rule(routes["community-collection"], community_collection)
     )
     # Register error handlers
     blueprint.register_error_handler(

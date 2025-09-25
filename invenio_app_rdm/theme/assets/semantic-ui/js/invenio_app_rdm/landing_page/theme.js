@@ -1,5 +1,5 @@
 // This file is part of InvenioRDM
-// Copyright (C) 2020-2021 CERN.
+// Copyright (C) 2020-2025 CERN.
 // Copyright (C) 2020-2021 Northwestern University.
 // Copyright (C) 2021 Graz University of Technology.
 //
@@ -10,6 +10,10 @@ import $ from "jquery";
 
 $("#record-doi-badge").on("click", function () {
   $("#doi-modal").modal("show");
+});
+
+$("#record-conceptdoi-badge").on("click", function () {
+  $("#conceptdoi-modal").modal("show");
 });
 
 $(".preview-link").on("click", function (event) {
@@ -28,7 +32,7 @@ $(".dropdown.export").dropdown({
   },
 });
 
-const $licensesPopup = $("#licenses li.has-popup .license.clickable");
+const $licensesPopup = $("#licenses .has-popup .license.clickable");
 
 // Licenses description popup
 $licensesPopup.popup({
@@ -45,18 +49,18 @@ $licensesPopup.popup({
 
 $licensesPopup.on("keydown", function (event) {
   if (event.key === "Enter") {
-    $("#licenses li.has-popup .license.clickable").popup("hide");
+    $licensesPopup.popup("hide");
     $(event.target).popup("show");
   }
 });
 
 $("#licenses .licenses-description .close.icon").on({
   click: function () {
-    $("#licenses li.has-popup .license.clickable").popup("hide");
+    $licensesPopup.popup("hide");
   },
   keydown: function (event) {
     if (event.key === "Enter") {
-      $("#licenses li.has-popup .license.clickable").popup("hide");
+      $licensesPopup.popup("hide");
     }
   },
 });

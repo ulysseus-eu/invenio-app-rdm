@@ -9,6 +9,12 @@
 """Request views module."""
 
 from flask import abort, g, redirect, request, url_for
+from invenio_collections.errors import (
+    CollectionNotFound,
+    CollectionTreeNotFound,
+    LogoNotFoundError,
+)
+from invenio_collections.proxies import current_collections
 from invenio_communities.views.communities import (
     HEADER_PERMISSIONS,
     _get_roles_can_invite,
@@ -16,16 +22,11 @@ from invenio_communities.views.communities import (
     render_community_theme_template,
 )
 from invenio_communities.views.decorators import pass_community
+from invenio_i18n import get_locale
 from invenio_pages.proxies import current_pages_service
 from invenio_pages.records.errors import PageNotFoundError
-from invenio_rdm_records.collections import (
-    CollectionNotFound,
-    CollectionTreeNotFound,
-    LogoNotFoundError,
-)
 from invenio_rdm_records.proxies import (
     current_community_records_service,
-    current_rdm_records,
 )
 from invenio_rdm_records.resources.serializers import UIJSONSerializer
 from invenio_records_resources.services.errors import PermissionDeniedError
@@ -54,7 +55,7 @@ def communities_detail(pid_value, community, community_ui):
 def communities_home(pid_value, community, community_ui):
     """Community home page."""
     query_params = request.args
-    collections_service = current_rdm_records.collections_service
+    collections_service = current_collections.service
     permissions = community.has_permissions_to(HEADER_PERMISSIONS)
     if not permissions["can_read"]:
         raise PermissionDeniedError()
@@ -111,7 +112,8 @@ def communities_home(pid_value, community, community_ui):
         return render_community_theme_template(
             "invenio_communities/details/home/index.html",
             theme=community_ui.get("theme", {}),
-            community=community_ui,
+            community=community,
+            community_ui=community_ui,
             permissions=permissions,
             records=records_ui,
             metrics=metrics,
@@ -124,7 +126,7 @@ def communities_browse(pid_value, community, community_ui):
     """Community browse page."""
     permissions = community.has_permissions_to(HEADER_PERMISSIONS)
 
-    collections_service = current_rdm_records.collections_service
+    collections_service = current_collections.service
 
     trees_ui = collections_service.list_trees(
         g.identity, community_id=community.id, depth=2
@@ -132,7 +134,8 @@ def communities_browse(pid_value, community, community_ui):
     return render_community_theme_template(
         "invenio_communities/details/browse/index.html",
         theme=community_ui.get("theme", {}),
-        community=community_ui,
+        community=community,
+        community_ui=community_ui,
         permissions=permissions,
         roles_can_update=_get_roles_can_update(community.id),
         roles_can_invite=_get_roles_can_invite(community.id),
@@ -148,7 +151,12 @@ def community_static_page(pid_value, community, community_ui, **kwargs):
         raise PermissionDeniedError()
 
     try:
-        page = current_pages_service.read_by_url(g.identity, request.path).to_dict()
+        lang = get_locale()
+        page = current_pages_service.read_by_url(
+            g.identity,
+            request.path,
+            lang=lang.language,
+        ).to_dict()
 
     except PageNotFoundError:
         abort(404)
@@ -156,8 +164,9 @@ def community_static_page(pid_value, community, community_ui, **kwargs):
     return render_community_theme_template(
         page["template_name"],
         theme=community_ui.get("theme", {}),
+        community=community,
+        community_ui=community_ui,
         page=page,
-        community=community_ui,
         permissions=permissions,
     )
 
@@ -167,7 +176,7 @@ def community_collection(
     community, community_ui, pid_value, tree_slug=None, collection_slug=None
 ):
     """Render a community collection page."""
-    collections_service = current_rdm_records.collections_service
+    collections_service = current_collections.service
     try:
         collection = collections_service.read(
             identity=g.identity,
@@ -186,11 +195,12 @@ def community_collection(
     collection_ui = collection.to_dict()
     return render_community_theme_template(
         "invenio_communities/collections/collection.html",
+        theme=community_ui.get("theme", {}),
+        community=community,
+        community_ui=community_ui,
         collection=collection_ui,
         # TODO _collection should not be accessed from here
         tree=collection._collection.collection_tree,
         logo=logo,
-        community=community,
         permissions=community.has_permissions_to(HEADER_PERMISSIONS),
-        theme=community_ui.get("theme", {}),
     )
