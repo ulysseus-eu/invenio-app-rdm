@@ -7,9 +7,10 @@
 
 """RDM User Schemas."""
 
+from invenio_accounts.profiles.schemas import UserPreferencesSchema
+
 from invenio_users_resources.services.schemas import (
     NotificationPreferences,
-    UserPreferencesSchema,
     UserSchema,
 )
 from marshmallow import fields
