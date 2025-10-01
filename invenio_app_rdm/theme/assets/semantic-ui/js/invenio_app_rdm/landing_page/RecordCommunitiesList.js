@@ -94,9 +94,9 @@ export class RecordCommunitiesList extends Component {
                     </Header>
                     {community.parent && (
                       <HeaderSubheader>
-                        Part of{" "}
+                        {i18next.t("Part of")}{" "}
                         <a href={`/communities/${community.parent.slug}`}>
-                          {community.parent.metadata.title}
+                          {i18next.t(community.parent.metadata.title)}
                         </a>
                       </HeaderSubheader>
                     )}

@@ -29,6 +29,7 @@ from invenio_rdm_records.records.systemfields.access.access_settings import (
     AccessSettings,
 )
 from invenio_rdm_records.resources.serializers import UIJSONSerializer
+from invenio_rdm_records.services.config import RDMRecordDeletionPolicy
 from invenio_stats.proxies import current_stats
 from invenio_users_resources.proxies import current_user_resources
 from marshmallow import ValidationError
@@ -37,7 +38,7 @@ from invenio_app_rdm.records_ui.previewer.iiif_simple import (
     previewable_extensions as image_extensions,
 )
 
-from ..utils import get_external_resources
+from ..utils import get_existing_deletion_request, get_external_resources
 from .decorators import (
     add_signposting_content_resources,
     add_signposting_landing_page,
@@ -156,6 +157,44 @@ def record_detail(
         record._record.parent["access"]["settings"] = AccessSettings({}).dump()
 
     record_ui = UIJSONSerializer().dump_obj(record.to_dict())
+
+    rec_del = RDMRecordDeletionPolicy().evaluate(g.identity, record._record)
+
+    immediate, request = rec_del["immediate_deletion"], rec_del["request_deletion"]
+    rd_enabled = immediate.enabled or request.enabled
+    rd_valid_user = (
+        rec_del["immediate_deletion"].valid_user
+        or rec_del["request_deletion"].valid_user
+    )
+    rd_allowed = immediate.allowed or request.allowed
+    existing_request = get_existing_deletion_request(record.id)
+
+    if rd_allowed:
+        record_deletion = {
+            "enabled": rd_enabled,
+            "valid_user": rd_valid_user,
+            "allowed": rd_allowed,
+            "recordDeletion": rec_del,
+            "checklist": (
+                current_app.config["RDM_IMMEDIATE_RECORD_DELETION_CHECKLIST"]
+                if immediate.allowed
+                else current_app.config["RDM_REQUEST_RECORD_DELETION_CHECKLIST"]
+            ),
+            "context": {
+                "files": record._record.files.count,
+                "internalDoi": record._record.pids["doi"]["provider"] != "external",
+            },
+        }
+    else:
+        record_deletion = {
+            "enabled": rd_enabled,
+            "valid_user": rd_valid_user,
+            "allowed": rd_allowed,
+        }
+    record_deletion["existing_request"] = (
+        existing_request["links"]["self_html"] if existing_request else None
+    )
+
     is_draft = record_ui["is_draft"]
     custom_fields = load_custom_fields()
     # keep only landing page configurable custom fields
@@ -216,24 +255,19 @@ def record_detail(
     if record is not None and emitter is not None:
         emitter(current_app, record=record._record, via_api=False)
 
-    record_owner = (
-        record_ui.get("expanded", {})
-        .get("parent", {})
-        .get("access", {})
-        .get("owned_by", {})
-    )
     resolved_community, _ = get_record_community(record_ui)
-    resolved_community = (
+    resolved_community_ui = (
         UICommunityJSONSerializer().dump_obj(resolved_community.to_dict())
         if resolved_community
         else None
     )
-    theme = resolved_community.get("theme", {}) if resolved_community else None
+    theme = resolved_community_ui.get("theme", {}) if resolved_community else None
 
     return render_community_theme_template(
         current_app.config.get("APP_RDM_RECORD_LANDING_PAGE_TEMPLATE"),
         theme=theme,
-        record=record_ui,
+        record=record,
+        record_ui=record_ui,
         files=files_dict,
         media_files=media_files_dict,
         user_communities_memberships=get_user_communities_memberships(),
@@ -248,6 +282,8 @@ def record_detail(
                 "view",
                 "media_read_files",
                 "moderate",
+                "request_deletion",
+                "immediately_delete",
             ]
         ),
         custom_fields_ui=custom_fields["ui"],
@@ -255,11 +291,10 @@ def record_detail(
         include_deleted=include_deleted,
         is_draft=is_draft,
         community=resolved_community,
+        community_ui=resolved_community_ui,
         external_resources=get_external_resources(record),
         user_avatar=avatar,
-        record_owner_id=(
-            record_owner.get("id")
-        ),  # record created with system_identity have not owners e.g demo
+        record_deletion=record_deletion,
     )
 
 
