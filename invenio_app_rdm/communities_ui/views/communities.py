@@ -26,11 +26,6 @@ from invenio_communities.utils import CommunityType
 from invenio_i18n import get_locale
 from invenio_pages.proxies import current_pages_service
 from invenio_pages.records.errors import PageNotFoundError
-from invenio_rdm_records.collections import (
-    CollectionNotFound,
-    CollectionTreeNotFound,
-    LogoNotFoundError,
-)
 from invenio_rdm_records.proxies import (
     current_community_records_service,
 )
