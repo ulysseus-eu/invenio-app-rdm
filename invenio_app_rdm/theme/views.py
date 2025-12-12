@@ -11,13 +11,14 @@
 
 """Routes for general pages provided by Invenio-App-RDM."""
 
-from flask import Blueprint, current_app, flash, render_template, request
+from flask import Blueprint, current_app, flash, render_template, request, redirect, url_for
 from flask_login import current_user
 from invenio_db import db
 from invenio_i18n import get_locale
 from invenio_i18n import lazy_gettext as _
 from invenio_pages.views import create_page_view
 from invenio_sitemap import iterate_urls_of_sitemap_indices
+from invenio_userprofiles import api as userprofiles_api
 from invenio_users_resources.forms import NotificationsForm
 
 from invenio_app_rdm.views import create_url_rule
@@ -60,6 +61,9 @@ def create_blueprint(app):
 #
 def index():
     """Frontpage."""
+    if current_user.is_authenticated:
+        if not userprofiles_api.current_userprofile.consent_by_providing_my_consent:
+            return redirect(url_for("invenio_userprofiles.profile"), code=303)
     return render_template(
         current_app.config["THEME_FRONTPAGE_TEMPLATE"],
         show_intro_section=current_app.config["THEME_SHOW_FRONTPAGE_INTRO_SECTION"],

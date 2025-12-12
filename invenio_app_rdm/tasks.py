@@ -14,7 +14,7 @@ from invenio_files_rest.models import FileInstance
 from .utils.files import send_integrity_report_email
 
 
-@shared_task()
+@shared_task
 def file_integrity_report():
     """Send a report of uhealthy/missing files to system admins."""
     # First retry verifying files that errored during their last check
