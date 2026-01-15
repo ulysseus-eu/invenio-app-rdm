@@ -5,10 +5,10 @@
     data-user-communities-memberships='{{ user_communities_memberships | tojson }}'
     data-record-community-endpoint='{{ record_ui["links"]["persons"] }}'
     data-record-community-search-endpoint='{{ record_ui["links"]["persons-suggestions"] }}'
-    data-pending-communities-search-config='{{ search_app_rdm_record_requests_config(app_id="InvenioAppRdm.RecordRequests", endpoint=record.links.requests) | tojson }}'
+    data-record-community-search-config='{{ search_app_rdm_record_communities_config(app_id="InvenioAppRdm.RecordCommunitiesSuggestions", endpoint=record_ui["links"]["persons-suggestions"]) | tojson }}'
     data-record-user-community-search-endpoint='{{ record_ui["links"]["persons-suggestions"] }}'
     data-record-user-community-search-config='{{ search_app_rdm_record_user_communities_config(app_id="InvenioAppRdm.RecordUserCommunitiesSuggestions", endpoint=record_ui["links"]["persons-suggestions"]) | tojson }}'
-    data-record-community-search-config='{{ search_app_rdm_record_communities_config(app_id="InvenioAppRdm.RecordCommunitiesSuggestions", endpoint=record_ui["links"]["persons-suggestions"]) | tojson }}'
+    data-pending-communities-search-config='{{ search_app_rdm_record_requests_config(app_id="InvenioAppRdm.RecordRequests", endpoint=record_ui["links"]["requests"]) | tojson }}'
     data-permissions='{{ permissions | tojson }}'
     data-record='{{ record_ui | tojson }}'
     class="sidebar-container"

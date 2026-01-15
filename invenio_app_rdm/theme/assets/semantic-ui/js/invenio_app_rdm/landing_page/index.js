@@ -167,6 +167,7 @@ if (sidebarPersonsManageDiv) {
           permissions={permissions}
           searchConfig={pendingCommunitiesSearchConfig}
           record={record}
+          communityType={new CommunityType("person")}
         />
       </Overridable>
     </OverridableContext.Provider>,
@@ -214,6 +215,7 @@ if (sidebarOrganizationsManageDiv) {
           permissions={permissions}
           searchConfig={pendingCommunitiesSearchConfig}
           record={record}
+          communityType={new CommunityType("organization")}
         />
       </Overridable>
     </OverridableContext.Provider>,
