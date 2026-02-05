@@ -81,7 +81,7 @@ def communities_home(pid_value, community, community_ui):
     if query_params or not theme_enabled:
         if community.data["metadata"].get("type") and community.data["metadata"]["type"]["id"] == "person":
             url = url_for(
-                "invenio_app_rdm_communities.persons_detail",
+                "invenio_communities.persons_profile",
                 pid_value=community.data["slug"],
                 **request.args
             )
